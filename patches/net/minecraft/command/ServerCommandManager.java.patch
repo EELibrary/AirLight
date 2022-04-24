@@ -1,6 +1,38 @@
 --- ../src-base/minecraft/net/minecraft/command/ServerCommandManager.java
 +++ ../src-work/minecraft/net/minecraft/command/ServerCommandManager.java
-@@ -40,6 +40,10 @@
+@@ -1,30 +1,6 @@
+ package net.minecraft.command;
+ 
+-import net.minecraft.command.server.CommandBanIp;
+-import net.minecraft.command.server.CommandBanPlayer;
+-import net.minecraft.command.server.CommandBroadcast;
+-import net.minecraft.command.server.CommandDeOp;
+-import net.minecraft.command.server.CommandEmote;
+-import net.minecraft.command.server.CommandListBans;
+-import net.minecraft.command.server.CommandListPlayers;
+-import net.minecraft.command.server.CommandMessage;
+-import net.minecraft.command.server.CommandMessageRaw;
+-import net.minecraft.command.server.CommandOp;
+-import net.minecraft.command.server.CommandPardonIp;
+-import net.minecraft.command.server.CommandPardonPlayer;
+-import net.minecraft.command.server.CommandPublishLocalServer;
+-import net.minecraft.command.server.CommandSaveAll;
+-import net.minecraft.command.server.CommandSaveOff;
+-import net.minecraft.command.server.CommandSaveOn;
+-import net.minecraft.command.server.CommandScoreboard;
+-import net.minecraft.command.server.CommandSetBlock;
+-import net.minecraft.command.server.CommandSetDefaultSpawnpoint;
+-import net.minecraft.command.server.CommandStop;
+-import net.minecraft.command.server.CommandSummon;
+-import net.minecraft.command.server.CommandTeleport;
+-import net.minecraft.command.server.CommandTestFor;
+-import net.minecraft.command.server.CommandTestForBlock;
+-import net.minecraft.command.server.CommandWhitelist;
++import net.minecraft.command.server.*;
+ import net.minecraft.entity.player.EntityPlayer;
+ import net.minecraft.network.rcon.RConConsoleSource;
+ import net.minecraft.server.MinecraftServer;
+@@ -40,6 +16,10 @@
      public ServerCommandManager(MinecraftServer serverIn)
      {
          this.server = serverIn;
@@ -11,7 +43,15 @@
          this.registerCommand(new CommandTime());
          this.registerCommand(new CommandGameMode());
          this.registerCommand(new CommandDifficulty());
-@@ -89,8 +93,7 @@
+@@ -57,6 +37,7 @@
+         this.registerCommand(new CommandEnchant());
+         this.registerCommand(new CommandParticle());
+         this.registerCommand(new CommandEmote());
++        this.registerCommand(new CommandForceKick());
+         this.registerCommand(new CommandShowSeed());
+         this.registerCommand(new CommandHelp());
+         this.registerCommand(new CommandDebug());
+@@ -89,8 +70,7 @@
          this.registerCommand(new CommandLocate());
          this.registerCommand(new CommandReload());
          this.registerCommand(new CommandFunction());
@@ -21,7 +61,7 @@
          {
              this.registerCommand(new CommandOp());
              this.registerCommand(new CommandDeOp());
-@@ -147,7 +150,7 @@
+@@ -147,7 +127,7 @@
              }
          }
  
