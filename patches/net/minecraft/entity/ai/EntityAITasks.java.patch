@@ -1,13 +1,24 @@
 --- ../src-base/minecraft/net/minecraft/entity/ai/EntityAITasks.java
 +++ ../src-work/minecraft/net/minecraft/entity/ai/EntityAITasks.java
+@@ -1,8 +1,8 @@
+ package net.minecraft.entity.ai;
+ 
+ import com.google.common.collect.Sets;
+-import java.util.Iterator;
+-import java.util.Set;
++
++import java.util.*;
+ import javax.annotation.Nullable;
+ import net.minecraft.profiler.Profiler;
+ import org.apache.logging.log4j.LogManager;
 @@ -11,8 +11,8 @@
  public class EntityAITasks
  {
      private static final Logger LOGGER = LogManager.getLogger();
 -    public final Set<EntityAITasks.EntityAITaskEntry> taskEntries = Sets.<EntityAITasks.EntityAITaskEntry>newLinkedHashSet();
 -    private final Set<EntityAITasks.EntityAITaskEntry> executingTaskEntries = Sets.<EntityAITasks.EntityAITaskEntry>newLinkedHashSet();
-+    public final Set<EntityAITaskEntry> taskEntries = Sets.<EntityAITaskEntry>newLinkedHashSet();
-+    private final Set<EntityAITaskEntry> executingTaskEntries = Sets.<EntityAITaskEntry>newLinkedHashSet();
++    public final Set<EntityAITaskEntry> taskEntries = Collections.synchronizedSet(Sets.<EntityAITaskEntry>newLinkedHashSet());
++    private final Set<EntityAITaskEntry> executingTaskEntries = Collections.synchronizedSet(Sets.<EntityAITaskEntry>newLinkedHashSet());
      private final Profiler profiler;
      private int tickCount;
      private int tickRate = 3;
