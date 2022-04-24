@@ -28,7 +28,7 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'net.minecraftforge.gradle.patcher'
 
-group = 'luohuayu.CatServer'
+group = 'oeg.airlight'
 version = 'git rev-parse --short HEAD'.execute().text.trim()
 
 repositories {
@@ -67,8 +67,6 @@ minecraft {
     def common = {
         patchPrefixOriginal "../src-base/minecraft"
         patchPrefixChanged "../src-work/minecraft"
-        /*mainClassClient "net.minecraft.launchwrapper.Launch"
-        tweakClassClient "net.minecraftforge.fml.common.launcher.FMLTweaker"*/
         mainClassServer "net.minecraft.launchwrapper.Launch"
         tweakClassServer "net.minecraftforge.fml.common.launcher.FMLServerTweaker"
     }
@@ -82,8 +80,6 @@ minecraft {
             genMcpPatches = true
             applyMcpPatches = true
             s2sKeepImports = true
-            //dchImports = true
-            //ignoreWhiteSpaces = false
             with common
         }
     }
@@ -156,11 +152,12 @@ dependencies {
 }
 
 outputJar {
-    classifier = 'universal'
+    classifier = 'test'
     
     manifest.attributes([
             "Implementation-Title": rootProject.name,
-            "Implementation-Version": "git-CatServer-" + minecraft.version + "-" + version,
+            "Implementation-Version": "git-AirLight-" + minecraft.version + "-" + version,
+            "Edit" : "Novau2333",
             "Implementation-Vendor": "Luohuayu".equals('git config user.name'.execute().text.trim()) ? "Luohuayu" : "Unofficial",
             "Main-Class": "catserver.server.CatServerLaunch",
             "TweakClass": "net.minecraftforge.fml.common.launcher.FMLTweaker",
@@ -173,8 +170,8 @@ processJson {
     addReplacements([
             "@minecraft_version@": project.minecraft.version,
             "@version@": project.version,
-            "@project@": "CatServer",
-            "@artifact@": "luohuayu:project:${project.version}",
+            "@project@": "AirLight",
+            "@artifact@": "airlight:project:${project.version}",
             "@universal_jar@": { outputJar.archiveName },
             "@timestamp@": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
     ])

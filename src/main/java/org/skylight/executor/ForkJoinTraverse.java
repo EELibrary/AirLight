@@ -64,7 +64,6 @@ public class ForkJoinTraverse extends AbstractExecutorService {
 
     public void awaitCompletion() {
         concurrentTask.get().join();
-
     }
 
 }

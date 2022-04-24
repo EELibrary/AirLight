@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 
 public class AsyncCatcher {
     public static boolean isMainThread() {
-        return false;
+        return true;
     }
 
     public static boolean checkAsync(String reason) {
