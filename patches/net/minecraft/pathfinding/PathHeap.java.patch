@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/pathfinding/PathHeap.java
 +++ ../src-work/minecraft/net/minecraft/pathfinding/PathHeap.java
-@@ -1,102 +1,82 @@
+@@ -1,102 +1,88 @@
  package net.minecraft.pathfinding;
  
 -public class PathHeap
@@ -13,6 +13,7 @@
 -    {
 -        if (point.index >= 0)
 -        {
++    private final Object mutex = new Object();
 +    public PathPoint addPoint(PathPoint point) {
 +        if (point.index.get() >= 0) {
              throw new IllegalStateException("OW KNOWS!");
@@ -38,16 +39,25 @@
  
 -    public void clearPath()
 -    {
+-        this.count = 0;
 +    public void clearPath() {
-         this.count = 0;
++        synchronized (mutex){
++            this.count = 0;
++        }
      }
  
 -    public PathPoint dequeue()
 -    {
+-        PathPoint pathpoint = this.pathPoints[0];
+-        this.pathPoints[0] = this.pathPoints[--this.count];
+-        this.pathPoints[this.count] = null;
 +    public PathPoint dequeue() {
-         PathPoint pathpoint = this.pathPoints[0];
-         this.pathPoints[0] = this.pathPoints[--this.count];
-         this.pathPoints[this.count] = null;
++        PathPoint pathpoint = null;
++        synchronized (mutex) {
++            pathpoint = this.pathPoints[0];
++            this.pathPoints[0] = this.pathPoints[--this.count];
++            this.pathPoints[this.count] = null;
++        }
  
 -        if (this.count > 0)
 -        {
@@ -97,21 +107,25 @@
 +            if (f >= pathpoint1.distanceToTarget) {
                  break;
              }
- 
+-
              this.pathPoints[index] = pathpoint1;
 -            pathpoint1.index = index;
 +            pathpoint1.index.set(index);
          }
- 
-         this.pathPoints[index] = pathpoint;
+-
+-        this.pathPoints[index] = pathpoint;
 -        pathpoint.index = index;
++        synchronized (mutex) {
++            this.pathPoints[index] = pathpoint;
++        }
 +        pathpoint.index.set(index);
      }
  
 -    private void sortForward(int index)
 -    {
+-        PathPoint pathpoint = this.pathPoints[index];
 +    private void sortForward(int index) {
-         PathPoint pathpoint = this.pathPoints[index];
++        PathPoint pathpoint =  this.pathPoints[index];
          float f = pathpoint.distanceToTarget;
  
 -        while (true)
@@ -126,7 +140,7 @@
                  break;
              }
  
-@@ -105,47 +85,38 @@
+@@ -105,47 +91,35 @@
              PathPoint pathpoint2;
              float f2;
  
@@ -151,7 +165,7 @@
 +                if (f1 >= f) {
                      break;
                  }
- 
+-
                  this.pathPoints[index] = pathpoint1;
 -                pathpoint1.index = index;
 +                pathpoint1.index.set(index);
@@ -165,14 +179,14 @@
 +                if (f2 >= f) {
                      break;
                  }
- 
+-
                  this.pathPoints[index] = pathpoint2;
 -                pathpoint2.index = index;
 +                pathpoint2.index.set(index);
                  index = j;
              }
          }
- 
+-
          this.pathPoints[index] = pathpoint;
 -        pathpoint.index = index;
 +        pathpoint.index.set(index);
