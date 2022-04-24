@@ -1,0 +1,200 @@
+--- ../src-base/minecraft/net/minecraft/world/gen/ChunkProviderServer.java
++++ ../src-work/minecraft/net/minecraft/world/gen/ChunkProviderServer.java
+@@ -26,15 +26,18 @@
+ import net.minecraft.world.chunk.storage.IChunkLoader;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.bukkit.event.world.ChunkUnloadEvent;
+ 
++// TODO: This class needs serious testing.
+ public class ChunkProviderServer implements IChunkProvider
+ {
+     private static final Logger LOGGER = LogManager.getLogger();
+-    private final Set<Long> droppedChunksSet = Sets.<Long>newHashSet();
++    public final Set<Long> droppedChunksSet = Sets.<Long>newHashSet();
+     public final IChunkGenerator chunkGenerator;
+     public final IChunkLoader chunkLoader;
+     public final Long2ObjectMap<Chunk> id2ChunkMap = new Long2ObjectOpenHashMap<Chunk>(8192);
+     public final WorldServer world;
++    private final Set<Long> loadingChunks = com.google.common.collect.Sets.newHashSet();
+ 
+     public ChunkProviderServer(WorldServer worldObjIn, IChunkLoader chunkLoaderIn, IChunkGenerator chunkGeneratorIn)
+     {
+@@ -82,23 +85,56 @@
+         return chunk;
+     }
+ 
++    // Is it copy of method above?
++    public Chunk getChunkIfLoaded(int x, int z) {
++        return id2ChunkMap.get(ChunkPos.asLong(x, z));
++    }
++
+     @Nullable
+     public Chunk loadChunk(int x, int z)
+     {
+-        Chunk chunk = this.getLoadedChunk(x, z);
++        return loadChunk(x, z, null);
++    }
+ 
++    @Nullable
++    public Chunk loadChunk(int x, int z, @Nullable Runnable runnable)
++    {
++        Chunk chunk = this.getLoadedChunk(x, z);
+         if (chunk == null)
+         {
+-            chunk = this.loadChunkFromFile(x, z);
+-
+-            if (chunk != null)
++            if ((net.minecraftforge.common.ForgeChunkManager.dormantChunkCacheSize > 0 || !(this.chunkLoader instanceof net.minecraft.world.chunk.storage.AnvilChunkLoader)) && catserver.server.AsyncCatcher.checkAsync("load chunk")) return catserver.server.AsyncCatcher.ensureExecuteOnPrimaryThread(() -> loadChunk(x, z, runnable)); // CatServer - Async will break forge dormant chunk cache
++            long pos = ChunkPos.asLong(x, z);
++            chunk = net.minecraftforge.common.ForgeChunkManager.fetchDormantChunk(pos, this.world);
++            if (chunk != null || !(this.chunkLoader instanceof net.minecraft.world.chunk.storage.AnvilChunkLoader))
+             {
++                if (!loadingChunks.add(pos)) net.minecraftforge.fml.common.FMLLog.bigWarning("There is an attempt to load a chunk ({},{}) in dimension {} that is already being loaded. This will cause weird chunk breakages.", x, z, this.world.provider.getDimension());
++                if (chunk == null) chunk = this.loadChunkFromFile(x, z);
++
++                if (chunk != null)
++                {
+                 this.id2ChunkMap.put(ChunkPos.asLong(x, z), chunk);
+                 chunk.onLoad();
+-                chunk.populate(this, this.chunkGenerator);
++                chunk.populateCB(this, this.chunkGenerator, false);
++                }
++
++                loadingChunks.remove(pos);
+             }
++            else
++            {
++                net.minecraft.world.chunk.storage.AnvilChunkLoader loader = (net.minecraft.world.chunk.storage.AnvilChunkLoader) this.chunkLoader;
++                if (runnable == null || !net.minecraftforge.common.ForgeChunkManager.asyncChunkLoading)
++                    chunk = net.minecraftforge.common.chunkio.ChunkIOExecutor.syncChunkLoad(this.world, loader, this, x, z);
++                else if (loader.isChunkGeneratedAt(x, z))
++                {
++                    // We can only use the async queue for already generated chunks
++                    net.minecraftforge.common.chunkio.ChunkIOExecutor.queueChunkLoad(this.world, loader, this, x, z, runnable);
++                    return null;
++                }
++            }
+         }
+ 
++        // If we didn't load the chunk async and have a callback run it now
++        if (runnable != null) runnable.run();
+         return chunk;
+     }
+ 
+@@ -108,6 +144,7 @@
+ 
+         if (chunk == null)
+         {
++            world.timings.syncChunkLoadTimer.startTiming(); // Spigot
+             long i = ChunkPos.asLong(x, z);
+ 
+             try
+@@ -126,7 +163,8 @@
+ 
+             this.id2ChunkMap.put(i, chunk);
+             chunk.onLoad();
+-            chunk.populate(this, this.chunkGenerator);
++            chunk.populateCB(this, this.chunkGenerator, true);
++            world.timings.syncChunkLoadTimer.stopTiming(); // Spigot
+         }
+ 
+         return chunk;
+@@ -218,36 +256,91 @@
+         this.chunkLoader.flush();
+     }
+ 
++    private static final double UNLOAD_QUEUE_RESIZE_FACTOR = 0.96;
++
+     public boolean tick()
+     {
+         if (!this.world.disableLevelSaving)
+         {
+             if (!this.droppedChunksSet.isEmpty())
+             {
++                for (ChunkPos forced : this.world.getPersistentChunks().keySet())
++                {
++                    this.droppedChunksSet.remove(ChunkPos.asLong(forced.x, forced.z));
++                }
++
++                // Spigot start
++                org.spigotmc.SlackActivityAccountant activityAccountant = net.minecraft.server.MinecraftServer.getServerInst().slackActivityAccountant;
++                activityAccountant.startActivity(0.5);
++                int targetSize = (int) (this.droppedChunksSet.size() * UNLOAD_QUEUE_RESIZE_FACTOR);
++                // Spigot end
++
+                 Iterator<Long> iterator = this.droppedChunksSet.iterator();
+ 
+-                for (int i = 0; i < 100 && iterator.hasNext(); iterator.remove())
++                while (iterator.hasNext()) // Spigot
+                 {
+                     Long olong = iterator.next();
++                    iterator.remove(); // Spigot
+                     Chunk chunk = (Chunk)this.id2ChunkMap.get(olong);
+ 
+                     if (chunk != null && chunk.unloadQueued)
+                     {
+-                        chunk.onUnload();
+-                        this.saveChunkData(chunk);
+-                        this.saveChunkExtraData(chunk);
+-                        this.id2ChunkMap.remove(olong);
+-                        ++i;
++                        if (!unloadChunk(chunk, true)) {
++                            continue;
++                        }
++
++                        // Spigot start
++                        if (this.droppedChunksSet.size() <= targetSize && activityAccountant.activityTimeIsExhausted()) {
++                            break;
++                        }
++                        // Spigot end
+                     }
+                 }
++
++                activityAccountant.endActivity(); // Spigot
+             }
+ 
++            if (this.id2ChunkMap.isEmpty() && !net.minecraftforge.common.DimensionManager.isBukkitDimension(this.world.provider.getDimension()) && catserver.server.CatServer.getConfig().autoUnloadDimensions.contains(this.world.provider.getDimension())) net.minecraftforge.common.DimensionManager.unloadWorld(this.world.provider.getDimension()); // CatServer - Ignore Bukkit world and use unload list
++
+             this.chunkLoader.chunkTick();
+         }
+ 
+         return false;
+     }
+ 
++    public boolean unloadChunk(Chunk chunk, boolean save) {
++        ChunkUnloadEvent event = new ChunkUnloadEvent(chunk.bukkitChunk, save);
++        this.world.getServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return false;
++        }
++        save = event.isSaveChunk();
++
++        // Update neighbor counts
++        for (int x = -2; x < 3; x++) {
++            for (int z = -2; z < 3; z++) {
++                if (x == 0 && z == 0) {
++                    continue;
++                }
++
++                Chunk neighbor = this.getChunkIfLoaded(chunk.x + x, chunk.z + z);
++                if (neighbor != null) {
++                    neighbor.setNeighborUnloaded(-x, -z);
++                    chunk.setNeighborUnloaded(x, z);
++                }
++            }
++        }
++        // Moved from unloadChunks above
++        chunk.onUnload();
++        if (save) {
++            net.minecraftforge.common.ForgeChunkManager.putDormantChunk(ChunkPos.asLong(chunk.x, chunk.z), chunk);
++            this.saveChunkData(chunk);
++            this.saveChunkExtraData(chunk);
++        }
++        this.id2ChunkMap.remove(chunk.chunkKey);
++        return true;
++    }
++
+     public boolean canSave()
+     {
+         return !this.world.disableLevelSaving;

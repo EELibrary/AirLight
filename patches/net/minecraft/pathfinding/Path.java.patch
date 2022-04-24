@@ -1,0 +1,135 @@
+--- ../src-base/minecraft/net/minecraft/pathfinding/Path.java
++++ ../src-work/minecraft/net/minecraft/pathfinding/Path.java
+@@ -36,17 +36,23 @@
+     @Nullable
+     public PathPoint getFinalPathPoint()
+     {
+-        return this.pathLength > 0 ? this.points[this.pathLength - 1] : null;
++        synchronized (points) {
++            return this.pathLength > 0 ? this.points[this.pathLength - 1] : null;
++        }
+     }
+ 
+     public PathPoint getPathPointFromIndex(int index)
+     {
+-        return this.points[index];
++        synchronized (points) {
++            return this.points[index];
++        }
+     }
+ 
+     public void setPoint(int index, PathPoint point)
+     {
+-        this.points[index] = point;
++        synchronized (points) {
++            this.points[index] = point;
++        }
+     }
+ 
+     public int getCurrentPathLength()
+@@ -71,10 +77,15 @@
+ 
+     public Vec3d getVectorFromIndex(Entity entityIn, int index)
+     {
+-        double d0 = (double)this.points[index].x + (double)((int)(entityIn.width + 1.0F)) * 0.5D;
+-        double d1 = (double)this.points[index].y;
+-        double d2 = (double)this.points[index].z + (double)((int)(entityIn.width + 1.0F)) * 0.5D;
+-        return new Vec3d(d0, d1, d2);
++        synchronized (points) {
++            if(index>points.length){
++                return new Vec3d(entityIn.posX,entityIn.posY,entityIn.posZ);
++            }
++            double d0 = (double) this.points[index].x + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
++            double d1 = (double) this.points[index].y;
++            double d2 = (double) this.points[index].z + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
++            return new Vec3d(d0, d1, d2);
++        }
+     }
+ 
+     public Vec3d getPosition(Entity entityIn)
+@@ -82,46 +93,47 @@
+         return this.getVectorFromIndex(entityIn, this.currentPathIndex);
+     }
+ 
+-    public Vec3d getCurrentPos()
+-    {
+-        PathPoint pathpoint = this.points[this.currentPathIndex];
+-        return new Vec3d((double)pathpoint.x, (double)pathpoint.y, (double)pathpoint.z);
++    public Vec3d getCurrentPos() {
++        PathPoint pathpoint;
++        synchronized (points) {
++            pathpoint = this.points[this.currentPathIndex];
++        }
++        return new Vec3d((double) pathpoint.x, (double) pathpoint.y, (double) pathpoint.z);
+     }
+ 
+     public boolean isSamePath(Path pathentityIn)
+     {
+-        if (pathentityIn == null)
+-        {
+-            return false;
+-        }
+-        else if (pathentityIn.points.length != this.points.length)
+-        {
+-            return false;
+-        }
+-        else
+-        {
+-            for (int i = 0; i < this.points.length; ++i)
+-            {
+-                if (this.points[i].x != pathentityIn.points[i].x || this.points[i].y != pathentityIn.points[i].y || this.points[i].z != pathentityIn.points[i].z)
+-                {
+-                    return false;
++        synchronized (points) {
++            if (pathentityIn == null) {
++                return false;
++            } else if (pathentityIn.points.length != this.points.length) {
++                return false;
++            } else {
++                for (int i = 0; i < this.points.length; ++i) {
++                    if (this.points[i].x != pathentityIn.points[i].x || this.points[i].y != pathentityIn.points[i].y || this.points[i].z != pathentityIn.points[i].z) {
++                        return false;
++                    }
+                 }
+-            }
+ 
+-            return true;
++                return true;
++            }
+         }
+     }
+ 
+     @SideOnly(Side.CLIENT)
+     public PathPoint[] getOpenSet()
+     {
+-        return this.openSet;
++        synchronized (openSet) {
++            return this.openSet;
++        }
+     }
+ 
+     @SideOnly(Side.CLIENT)
+     public PathPoint[] getClosedSet()
+     {
+-        return this.closedSet;
++        synchronized (closedSet) {
++            return this.closedSet;
++        }
+     }
+ 
+     @SideOnly(Side.CLIENT)
+@@ -157,8 +169,12 @@
+         }
+ 
+         Path path = new Path(apathpoint);
+-        path.openSet = apathpoint1;
+-        path.closedSet = apathpoint2;
++        synchronized (path.getOpenSet()) {
++            path.openSet = apathpoint1;
++        }
++        synchronized (path.closedSet) {
++            path.closedSet = apathpoint2;
++        }
+         path.target = pathpoint;
+         path.currentPathIndex = i;
+         return path;

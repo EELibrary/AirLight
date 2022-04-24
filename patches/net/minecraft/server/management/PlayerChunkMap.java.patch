@@ -1,0 +1,354 @@
+--- ../src-base/minecraft/net/minecraft/server/management/PlayerChunkMap.java
++++ ../src-work/minecraft/net/minecraft/server/management/PlayerChunkMap.java
+@@ -4,15 +4,17 @@
+ import com.google.common.collect.AbstractIterator;
+ import com.google.common.collect.ComparisonChain;
+ import com.google.common.collect.Lists;
+-import com.google.common.collect.Sets;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+-import java.util.Collections;
+-import java.util.Comparator;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Set;
++
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentLinkedQueue;
++import java.util.concurrent.CopyOnWriteArrayList;
++import java.util.concurrent.atomic.AtomicBoolean;
+ import javax.annotation.Nullable;
++
++import net.minecraft.entity.player.EntityPlayer;
+ import net.minecraft.entity.player.EntityPlayerMP;
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.util.math.ChunkPos;
+@@ -38,12 +40,12 @@
+         }
+     };
+     private final WorldServer world;
+-    private final List<EntityPlayerMP> players = Lists.<EntityPlayerMP>newArrayList();
++    private final List<EntityPlayerMP> players = Collections.synchronizedList(Lists.newArrayList());
+     private final Long2ObjectMap<PlayerChunkMapEntry> entryMap = new Long2ObjectOpenHashMap<PlayerChunkMapEntry>(4096);
+-    private final Set<PlayerChunkMapEntry> dirtyEntries = Sets.<PlayerChunkMapEntry>newHashSet();
+-    private final List<PlayerChunkMapEntry> pendingSendToPlayers = Lists.<PlayerChunkMapEntry>newLinkedList();
+-    private final List<PlayerChunkMapEntry> entriesWithoutChunks = Lists.<PlayerChunkMapEntry>newLinkedList();
+-    private final List<PlayerChunkMapEntry> entries = Lists.<PlayerChunkMapEntry>newArrayList();
++    private final Set<PlayerChunkMapEntry> dirtyEntries = ConcurrentHashMap.newKeySet();
++    private final List<PlayerChunkMapEntry> pendingSendToPlayers = Collections.synchronizedList(Lists.<PlayerChunkMapEntry>newLinkedList());
++    private final List<PlayerChunkMapEntry> entriesWithoutChunks = new CopyOnWriteArrayList<>();
++    private final List<PlayerChunkMapEntry> entries = Collections.synchronizedList(Lists.newArrayList());
+     private int playerViewRadius;
+     private long previousTotalWorldTime;
+     private boolean sortMissingChunks = true;
+@@ -52,16 +54,25 @@
+     public PlayerChunkMap(WorldServer serverWorld)
+     {
+         this.world = serverWorld;
+-        this.setPlayerViewRadius(serverWorld.getMinecraftServer().getPlayerList().getViewDistance());
++        this.setPlayerViewRadius(serverWorld.spigotConfig.viewDistance); // Spigot
+     }
+ 
+     public WorldServer getWorldServer()
+     {
+         return this.world;
+     }
+-
++    private final Queue<Runnable> entriesEditQueue = new ConcurrentLinkedQueue<>();
++    private final AtomicBoolean entriesIteraing = new AtomicBoolean(false);
+     public Iterator<Chunk> getChunkIterator()
+     {
++        for(Runnable task : entriesEditQueue){
++            try{
++                task.run();
++            }finally{
++                entriesEditQueue.remove(task);
++            }
++        }
++        entriesIteraing.set(true);
+         final Iterator<PlayerChunkMapEntry> iterator = this.entries.iterator();
+         return new AbstractIterator<Chunk>()
+         {
+@@ -96,7 +107,7 @@
+ 
+                         return chunk;
+                     }
+-
++                    entriesIteraing.set(false);
+                     return (Chunk)this.endOfData();
+                 }
+             }
+@@ -157,19 +168,20 @@
+         {
+             long l = System.nanoTime() + 50000000L;
+             int k = 49;
+-            Iterator<PlayerChunkMapEntry> iterator = this.entriesWithoutChunks.iterator();
+ 
+-            while (iterator.hasNext())
+-            {
+-                PlayerChunkMapEntry playerchunkmapentry1 = iterator.next();
++            // Spigot start
++            org.spigotmc.SlackActivityAccountant activityAccountant = net.minecraft.server.MinecraftServer.getServerInst().slackActivityAccountant;
++            activityAccountant.startActivity(Math.min(catserver.server.CatServer.getConfig().worldGenMaxTickTime, 18.75) / (18.75 * 2)); // CatServer - 50 * 0.375 = 18.75
++            // Spigot end
+ 
++            for(PlayerChunkMapEntry playerchunkmapentry1 : this.entriesWithoutChunks){
+                 if (playerchunkmapentry1.getChunk() == null)
+                 {
+                     boolean flag = playerchunkmapentry1.hasPlayerMatching(CAN_GENERATE_CHUNKS);
+ 
+                     if (playerchunkmapentry1.providePlayerChunk(flag))
+                     {
+-                        iterator.remove();
++                        this.entriesWithoutChunks.remove(playerchunkmapentry1);
+ 
+                         if (playerchunkmapentry1.sendToPlayers())
+                         {
+@@ -178,13 +190,19 @@
+ 
+                         --k;
+ 
+-                        if (k < 0 || System.nanoTime() > l)
++                        if (k < 0 || activityAccountant.activityTimeIsExhausted()) // CatServer
+                         {
+                             break;
+                         }
+                     }
++                } else {
++                    // CraftBukkit - SPIGOT-2891: remove once chunk has been provided
++                    this.entriesWithoutChunks.remove(playerchunkmapentry1);
+                 }
+             }
++
++
++            activityAccountant.endActivity(); // Spigot
+         }
+ 
+         if (!this.pendingSendToPlayers.isEmpty())
+@@ -223,25 +241,41 @@
+     public boolean contains(int chunkX, int chunkZ)
+     {
+         long i = getIndex(chunkX, chunkZ);
+-        return this.entryMap.get(i) != null;
++        synchronized (entryMap) {
++            return this.entryMap.get(i) != null;
++        }
+     }
+ 
+     @Nullable
+     public PlayerChunkMapEntry getEntry(int x, int z)
+     {
+-        return (PlayerChunkMapEntry)this.entryMap.get(getIndex(x, z));
++        synchronized (entryMap) {
++            return (PlayerChunkMapEntry) this.entryMap.get(getIndex(x, z));
++        }
+     }
+ 
+     private PlayerChunkMapEntry getOrCreateEntry(int chunkX, int chunkZ)
+     {
+         long i = getIndex(chunkX, chunkZ);
+-        PlayerChunkMapEntry playerchunkmapentry = (PlayerChunkMapEntry)this.entryMap.get(i);
++        PlayerChunkMapEntry playerchunkmapentry = null;
++        synchronized (entryMap){
++            playerchunkmapentry = (PlayerChunkMapEntry)this.entryMap.get(i);
++        }
+ 
+         if (playerchunkmapentry == null)
+         {
+             playerchunkmapentry = new PlayerChunkMapEntry(this, chunkX, chunkZ);
+-            this.entryMap.put(i, playerchunkmapentry);
+-            this.entries.add(playerchunkmapentry);
++            synchronized (entryMap) {
++                this.entryMap.put(i, playerchunkmapentry);
++            }
++            if(!entriesIteraing.get()) {
++                this.entries.add(playerchunkmapentry);
++            }else{
++                PlayerChunkMapEntry finalPlayerchunkmapentry = playerchunkmapentry;
++                entriesEditQueue.add(()->{
++                    this.entries.add(finalPlayerchunkmapentry);
++                });
++            }
+ 
+             if (playerchunkmapentry.getChunk() == null)
+             {
+@@ -257,8 +291,17 @@
+         return playerchunkmapentry;
+     }
+ 
++    public final boolean isChunkInUse(int x, int z) {
++        PlayerChunkMapEntry pi = getEntry(x, z);
++        if (pi != null) {
++            return (pi.players.size() > 0);
++        }
++        return false;
++    }
++
+     public void markBlockForUpdate(BlockPos pos)
+     {
++        if (catserver.server.AsyncCatcher.checkAndPostPrimaryThread("update block", () -> markBlockForUpdate(pos))) return; // CatServer
+         int i = pos.getX() >> 4;
+         int j = pos.getZ() >> 4;
+         PlayerChunkMapEntry playerchunkmapentry = this.getEntry(i, j);
+@@ -276,14 +319,22 @@
+         player.managedPosX = player.posX;
+         player.managedPosZ = player.posZ;
+ 
++        List<ChunkPos> chunkList = new LinkedList<>();
++
+         for (int k = i - this.playerViewRadius; k <= i + this.playerViewRadius; ++k)
+         {
+             for (int l = j - this.playerViewRadius; l <= j + this.playerViewRadius; ++l)
+             {
+-                this.getOrCreateEntry(k, l).addPlayer(player);
++                // this.getOrCreateEntry(k, l).addPlayer(player);
++                chunkList.add(new ChunkPos(k, l));
+             }
+         }
+ 
++        Collections.sort(chunkList, new ChunkCoordComparator(player));
++        for (ChunkPos pair : chunkList) {
++            this.getOrCreateEntry(pair.x, pair.z).addPlayer(player);
++        }
++
+         this.players.add(player);
+         this.markSortPending();
+     }
+@@ -341,6 +392,8 @@
+             int j1 = i - k;
+             int k1 = j - l;
+ 
++            List<ChunkPos> chunksToLoad = new LinkedList<>();
++
+             if (j1 != 0 || k1 != 0)
+             {
+                 for (int l1 = i - i1; l1 <= i + i1; ++l1)
+@@ -349,7 +402,8 @@
+                     {
+                         if (!this.overlaps(l1, i2, k, l, i1))
+                         {
+-                            this.getOrCreateEntry(l1, i2).addPlayer(player);
++                            // this.getOrCreateEntry(l1, i2).addPlayer(player);
++                            chunksToLoad.add(new ChunkPos(l1, i2));
+                         }
+ 
+                         if (!this.overlaps(l1 - j1, i2 - k1, i, j, i1))
+@@ -367,6 +421,12 @@
+                 player.managedPosX = player.posX;
+                 player.managedPosZ = player.posZ;
+                 this.markSortPending();
++                // CraftBukkit start - send nearest chunks first
++                Collections.sort(chunksToLoad, new ChunkCoordComparator(player));
++                for (ChunkPos pair : chunksToLoad) {
++                    this.getOrCreateEntry(pair.x, pair.z).addPlayer(player);
++                }
++                // CraftBukkit end
+             }
+         }
+     }
+@@ -443,24 +503,101 @@
+ 
+     public void entryChanged(PlayerChunkMapEntry entry)
+     {
++        org.spigotmc.AsyncCatcher.catchOp("Async Player Chunk Add"); // Paper
+         this.dirtyEntries.add(entry);
+     }
+ 
+     public void removeEntry(PlayerChunkMapEntry entry)
+     {
++        org.spigotmc.AsyncCatcher.catchOp("Async Player Chunk Remove"); // Paper
+         ChunkPos chunkpos = entry.getPos();
+         long i = getIndex(chunkpos.x, chunkpos.z);
+         entry.updateChunkInhabitedTime();
+-        this.entryMap.remove(i);
+-        this.entries.remove(entry);
++        synchronized (entryMap) {
++            this.entryMap.remove(i);
++        }
++        if(!entriesIteraing.get()) {
++            this.entries.remove(entry);
++        }else{
++            this.entries.remove(entry);
++        }
+         this.dirtyEntries.remove(entry);
+         this.pendingSendToPlayers.remove(entry);
+         this.entriesWithoutChunks.remove(entry);
+         Chunk chunk = entry.getChunk();
+ 
+-        if (chunk != null)
++        if (false && chunk != null) // CatServer - use craftbukkit timing unload chunk
+         {
+             this.getWorldServer().getChunkProvider().queueUnload(chunk);
+         }
+     }
++
++    // CraftBukkit start - Sorter to load nearby chunks first
++    private static class ChunkCoordComparator implements java.util.Comparator<ChunkPos> {
++        private int x;
++        private int z;
++
++        public ChunkCoordComparator (EntityPlayer entityplayer) {
++            x = (int) entityplayer.posX >> 4;
++            z = (int) entityplayer.posZ >> 4;
++        }
++
++        // CatServer start
++        public ChunkCoordComparator(int x, int z) {
++            this.x = x;
++            this.z = z;
++        }
++        // CatServer end
++
++        public int compare(ChunkPos a, ChunkPos b) {
++            if (a.equals(b)) {
++                return 0;
++            }
++
++            // Subtract current position to set center point
++            int ax = a.x - this.x;
++            int az = a.z - this.z;
++            int bx = b.x - this.x;
++            int bz = b.z - this.z;
++
++            int result = ((ax - bx) * (ax + bx)) + ((az - bz) * (az + bz));
++            if (result != 0) {
++                return result;
++            }
++
++            if (ax < 0) {
++                if (bx < 0) {
++                    return bz - az;
++                } else {
++                    return -1;
++                }
++            } else {
++                if (bx < 0) {
++                    return 1;
++                } else {
++                    return az - bz;
++                }
++            }
++        }
++    }
++    // CraftBukkit end
++
++    // CatServer start
++    public void prepareForAsync(int chunkX, int chunkZ) {
++        List<ChunkPos> chunkList = new LinkedList<>();
++
++        for (int k = chunkX - this.playerViewRadius; k <= chunkX + this.playerViewRadius; ++k) {
++            for (int l = chunkZ - this.playerViewRadius; l <= chunkZ + this.playerViewRadius; ++l) {
++                chunkList.add(new ChunkPos(k, l));
++            }
++        }
++
++        Collections.sort(chunkList, new ChunkCoordComparator(chunkX, chunkZ));
++        for (ChunkPos pair : chunkList) {
++            this.getOrCreateEntry(pair.x, pair.z);
++        }
++
++        this.markSortPending();
++    }
++    // CatServer end
+ }

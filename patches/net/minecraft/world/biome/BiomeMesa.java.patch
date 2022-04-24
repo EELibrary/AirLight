@@ -1,0 +1,10 @@
+--- ../src-base/minecraft/net/minecraft/world/biome/BiomeMesa.java
++++ ../src-work/minecraft/net/minecraft/world/biome/BiomeMesa.java
+@@ -336,6 +336,7 @@
+         protected void generateOres(World worldIn, Random random)
+         {
+             super.generateOres(worldIn, random);
++            if (net.minecraftforge.event.terraingen.TerrainGen.generateOre(worldIn, random, goldGen, chunkPos, net.minecraftforge.event.terraingen.OreGenEvent.GenerateMinable.EventType.GOLD))
+             this.genStandardOre1(worldIn, random, 20, this.goldGen, 32, 80);
+         }
+     }

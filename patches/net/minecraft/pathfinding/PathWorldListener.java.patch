@@ -1,0 +1,35 @@
+--- ../src-base/minecraft/net/minecraft/pathfinding/PathWorldListener.java
++++ ../src-work/minecraft/net/minecraft/pathfinding/PathWorldListener.java
+@@ -1,6 +1,9 @@
+ package net.minecraft.pathfinding;
+ 
+ import com.google.common.collect.Lists;
++
++import java.util.ArrayList;
++import java.util.Collections;
+ import java.util.List;
+ import javax.annotation.Nullable;
+ import net.minecraft.block.state.IBlockState;
+@@ -16,17 +19,19 @@
+ 
+ public class PathWorldListener implements IWorldEventListener
+ {
+-    private final List<PathNavigate> navigations = Lists.<PathNavigate>newArrayList();
++    private final List<PathNavigate> navigations = Collections.synchronizedList(Lists.<PathNavigate>newArrayList());
+ 
+     public void notifyBlockUpdate(World worldIn, BlockPos pos, IBlockState oldState, IBlockState newState, int flags)
+     {
+         if (this.didBlockChange(worldIn, pos, oldState, newState))
+         {
++            final List<PathNavigate> copyList = new ArrayList<>(navigations);
++
+             int i = 0;
+ 
+-            for (int j = this.navigations.size(); i < j; ++i)
++            for (int j = copyList.size(); i < j; ++i)
+             {
+-                PathNavigate pathnavigate = this.navigations.get(i);
++                PathNavigate pathnavigate = copyList.get(i);
+ 
+                 if (pathnavigate != null && !pathnavigate.canUpdatePathOnTimeout())
+                 {

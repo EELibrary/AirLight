@@ -1,0 +1,103 @@
+--- ../src-base/minecraft/net/minecraft/item/crafting/CraftingManager.java
++++ ../src-work/minecraft/net/minecraft/item/crafting/CraftingManager.java
+@@ -36,12 +36,14 @@
+ {
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static int nextAvailableId;
+-    public static final RegistryNamespaced<ResourceLocation, IRecipe> REGISTRY = new RegistryNamespaced<ResourceLocation, IRecipe>();
++    public static RegistryNamespaced<ResourceLocation, IRecipe> REGISTRY = net.minecraftforge.registries.GameData.getWrapper(IRecipe.class);
++    private static final IRecipe[] cachedRecipe = new IRecipe[3]; // CatServer
+ 
+     public static boolean init()
+     {
+         try
+         {
++            CraftingManager.nextAvailableId = 0; // Reset recipe ID count
+             register("armordye", new RecipesArmorDyes());
+             register("bookcloning", new RecipeBookCloning());
+             register("mapcloning", new RecipesMapCloning());
+@@ -173,12 +175,14 @@
+         }
+     }
+ 
+-    public static void register(String name, IRecipe recipe)
++    //Forge: Made private use GameData/Registry events!
++    private static void register(String name, IRecipe recipe)
+     {
+         register(new ResourceLocation(name), recipe);
+     }
+ 
+-    public static void register(ResourceLocation name, IRecipe recipe)
++    //Forge: Made private use GameData/Registry events!
++    private static void register(ResourceLocation name, IRecipe recipe)
+     {
+         if (REGISTRY.containsKey(name))
+         {
+@@ -186,43 +190,52 @@
+         }
+         else
+         {
++            recipe.setKey(name);
+             REGISTRY.register(nextAvailableId++, name, recipe);
+         }
+     }
+ 
+     public static ItemStack findMatchingResult(InventoryCrafting craftMatrix, World worldIn)
+     {
++        synchronized (cachedRecipe) { if (cachedRecipe[0] != null && cachedRecipe[0].matches(craftMatrix, worldIn)) return cachedRecipe[0].getCraftingResult(craftMatrix); } // CatServer
+         for (IRecipe irecipe : REGISTRY)
+         {
+             if (irecipe.matches(craftMatrix, worldIn))
+             {
++                synchronized (cachedRecipe) { cachedRecipe[0] = irecipe; } // CatServer
+                 return irecipe.getCraftingResult(craftMatrix);
+             }
+         }
+-
++        craftMatrix.currentRecipe = null; // CraftBukkit - Clear recipe when no recipe is found
+         return ItemStack.EMPTY;
+     }
+ 
+     @Nullable
+     public static IRecipe findMatchingRecipe(InventoryCrafting craftMatrix, World worldIn)
+     {
++        synchronized (cachedRecipe) { if (cachedRecipe[1] != null && cachedRecipe[1].matches(craftMatrix, worldIn)) { craftMatrix.currentRecipe = cachedRecipe[1]; return cachedRecipe[1];} } // CatServer
+         for (IRecipe irecipe : REGISTRY)
+         {
+             if (irecipe.matches(craftMatrix, worldIn))
+             {
++                synchronized (cachedRecipe) { cachedRecipe[1] = irecipe; } // CatServer
++                craftMatrix.currentRecipe = irecipe; // CraftBukkit
+                 return irecipe;
+             }
+         }
+ 
++        craftMatrix.currentRecipe = null; // CraftBukkit - Clear recipe when no recipe is found
+         return null;
+     }
+ 
+     public static NonNullList<ItemStack> getRemainingItems(InventoryCrafting craftMatrix, World worldIn)
+     {
++        synchronized (cachedRecipe) { if (cachedRecipe[2] != null && cachedRecipe[2].matches(craftMatrix, worldIn)) return cachedRecipe[2].getRemainingItems(craftMatrix); } // CatServer
+         for (IRecipe irecipe : REGISTRY)
+         {
+             if (irecipe.matches(craftMatrix, worldIn))
+             {
++                synchronized (cachedRecipe) { cachedRecipe[2] = irecipe; } // CatServer
+                 return irecipe.getRemainingItems(craftMatrix);
+             }
+         }
+@@ -243,11 +256,13 @@
+         return REGISTRY.getObject(name);
+     }
+ 
++    @Deprecated //DO NOT USE THIS
+     public static int getIDForRecipe(IRecipe recipe)
+     {
+         return REGISTRY.getIDForObject(recipe);
+     }
+ 
++    @Deprecated //DO NOT USE THIS
+     @Nullable
+     public static IRecipe getRecipeById(int id)
+     {

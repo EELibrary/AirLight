@@ -1,0 +1,46 @@
+--- ../src-base/minecraft/net/minecraft/world/storage/MapStorage.java
++++ ../src-work/minecraft/net/minecraft/world/storage/MapStorage.java
+@@ -56,9 +56,14 @@
+                             throw new RuntimeException("Failed to instantiate " + clazz, exception);
+                         }
+ 
+-                        FileInputStream fileinputstream = new FileInputStream(file1);
+-                        NBTTagCompound nbttagcompound = CompressedStreamTools.readCompressed(fileinputstream);
+-                        fileinputstream.close();
++                        // CatServer start
++                        NBTTagCompound nbttagcompound = null;
++                        synchronized (MapStorage.this) {
++                            FileInputStream fileinputstream = new FileInputStream(file1);
++                            nbttagcompound = CompressedStreamTools.readCompressed(fileinputstream);
++                            fileinputstream.close();
++                        }
++                        // CatServer end
+                         worldsaveddata.readFromNBT(nbttagcompound.getCompoundTag("data"));
+                     }
+                 }
+@@ -114,10 +119,21 @@
+                 if (file1 != null)
+                 {
+                     NBTTagCompound nbttagcompound = new NBTTagCompound();
+-                    nbttagcompound.setTag("data", data.writeToNBT(new NBTTagCompound()));
+-                    FileOutputStream fileoutputstream = new FileOutputStream(file1);
+-                    CompressedStreamTools.writeCompressed(nbttagcompound, fileoutputstream);
+-                    fileoutputstream.close();
++                    // CatServer start
++                    nbttagcompound.setTag("data", data.writeToNBT(new NBTTagCompound()).copy());
++                    Runnable runnable = () -> {
++                        try {
++                            synchronized (MapStorage.this) {
++                                FileOutputStream fileoutputstream = new FileOutputStream(file1);
++                                CompressedStreamTools.writeCompressed(nbttagcompound, fileoutputstream);
++                                fileoutputstream.close();
++                            }
++                        } catch (Exception e) {
++                            catserver.server.CatServer.log.warn("An exception occurred while saving " + data.mapName + " to " + file1.getName(), e);
++                        }
++                    };
++                    catserver.server.CatServer.scheduleAsyncTask(runnable);
++                    // CatServer end
+                 }
+             }
+             catch (Exception exception)

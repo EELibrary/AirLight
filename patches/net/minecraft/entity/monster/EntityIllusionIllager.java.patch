@@ -1,0 +1,22 @@
+--- ../src-base/minecraft/net/minecraft/entity/monster/EntityIllusionIllager.java
++++ ../src-work/minecraft/net/minecraft/entity/monster/EntityIllusionIllager.java
+@@ -63,8 +63,8 @@
+         super.initEntityAI();
+         this.tasks.addTask(0, new EntityAISwimming(this));
+         this.tasks.addTask(1, new EntitySpellcasterIllager.AICastingApell());
+-        this.tasks.addTask(4, new EntityIllusionIllager.AIMirriorSpell());
+-        this.tasks.addTask(5, new EntityIllusionIllager.AIBlindnessSpell());
++        this.tasks.addTask(4, new AIMirriorSpell());
++        this.tasks.addTask(5, new AIBlindnessSpell());
+         this.tasks.addTask(6, new EntityAIAttackRangedBow(this, 0.5D, 20, 15.0F));
+         this.tasks.addTask(8, new EntityAIWander(this, 0.6D));
+         this.tasks.addTask(9, new EntityAIWatchClosest(this, EntityPlayer.class, 3.0F, 1.0F));
+@@ -214,6 +214,8 @@
+     public void attackEntityWithRangedAttack(EntityLivingBase target, float distanceFactor)
+     {
+         EntityArrow entityarrow = this.createArrowEntity(distanceFactor);
++        if (this.getHeldItemMainhand().getItem() instanceof net.minecraft.item.ItemBow)
++            entityarrow = ((net.minecraft.item.ItemBow) this.getHeldItemMainhand().getItem()).customizeArrow(entityarrow);
+         double d0 = target.posX - this.posX;
+         double d1 = target.getEntityBoundingBox().minY + (double)(target.height / 3.0F) - entityarrow.posY;
+         double d2 = target.posZ - this.posZ;
