@@ -536,7 +536,7 @@
                  long i = 0L;
                  this.statusResponse.setServerDescription(new TextComponentString(this.motd));
 -                this.statusResponse.setVersion(new ServerStatusResponse.Version("1.12.2", 340));
-+                this.statusResponse.setVersion(new ServerStatusResponse.Version("SS1.12.2", 340));
++                this.statusResponse.setVersion(new ServerStatusResponse.Version("AL1.12.2", 340));
                  this.applyServerIconToResponse(this.statusResponse);
  
 +                // Spigot start
@@ -864,7 +864,7 @@
      }
  
      public File getFile(String fileName)
-@@ -779,16 +1032,20 @@
+@@ -779,19 +1032,23 @@
  
      public WorldServer getWorld(int dimension)
      {
@@ -890,13 +890,17 @@
 +
      public String getMinecraftVersion()
      {
-         return "1.12.2";
+-        return "1.12.2";
++        return "AL1.12.2";
+     }
+ 
+     public int getCurrentPlayerCount()
 @@ -816,7 +1073,7 @@
  
      public String getServerModName()
      {
 -        return "vanilla";
-+        return "SkyLight";
++        return "AirLight";
      }
  
      public CrashReport addServerInfoToCrashReport(CrashReport report)

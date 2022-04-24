@@ -299,7 +299,7 @@
                          channelfuture1.addListeners(futureListeners);
                      }
  
-@@ -250,89 +229,104 @@
+@@ -250,89 +229,107 @@
          }
      }
  
@@ -360,25 +360,28 @@
 +    public SocketAddress getRemoteAddress() {
          return this.socketAddress;
      }
++    public static boolean enablePPSLimitor = false;
++    public boolean isOutOfBound(int pps,Channel channel){
++        if(enablePPSLimitor) {
++            long time = 1000 / pps;
++            boolean isOuted = false;
++            if (!times.contains(channel)) {
++                times.put(channel, System.currentTimeMillis());
++            }
++            if ((System.currentTimeMillis() - times.get(channel)) > time) {
++                isOuted = true;
++            }
++            times.replace(channel, System.currentTimeMillis());
++            return isOuted;
++        }
++        return false;
++    }
  
 -    public void closeChannel(ITextComponent message)
 -    {
 -        if (this.channel.isOpen())
 -        {
 -            this.channel.close().awaitUninterruptibly();
-+    public boolean isOutOfBound(int pps,Channel channel){
-+       long time = 1000/pps;
-+       boolean isOuted = false;
-+       if(!times.contains(channel)){
-+           times.put(channel, System.currentTimeMillis());
-+       }
-+       if((System.currentTimeMillis() - times.get(channel)) > time){
-+           isOuted = true;
-+       }
-+       times.replace(channel,System.currentTimeMillis());
-+       return isOuted;
-+    }
-+
 +    public static ConcurrentHashMap<Channel,Long> times = new ConcurrentHashMap<>();
 +    public void forceDisconnect(){
 +        //防止某些碧池开挂踢不出去
@@ -454,7 +457,7 @@
                      ;
                  }
  
-@@ -343,126 +337,105 @@
+@@ -343,126 +340,105 @@
      }
  
      @SideOnly(Side.CLIENT)

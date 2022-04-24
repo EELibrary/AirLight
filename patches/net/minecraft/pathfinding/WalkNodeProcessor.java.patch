@@ -24,7 +24,17 @@
                  }
              }
          }
-@@ -295,7 +297,9 @@
+@@ -198,6 +200,9 @@
+         else
+         {
+             PathNodeType pathnodetype = this.getPathNodeType(this.entity, x, y, z);
++            if(pathnodetype == null){
++                return null;
++            }
+             float f = this.entity.getPathPriority(pathnodetype);
+             double d1 = (double)this.entity.width / 2.0D;
+ 
+@@ -295,7 +300,9 @@
          PathNodeType pathnodetype = PathNodeType.BLOCKED;
          double d0 = (double)entitylivingIn.width / 2.0D;
          BlockPos blockpos = new BlockPos(entitylivingIn);
@@ -34,7 +44,7 @@
  
          if (enumset.contains(PathNodeType.FENCE))
          {
-@@ -399,6 +403,8 @@
+@@ -399,6 +406,8 @@
              {
                  pathnodetype = PathNodeType.DAMAGE_CACTUS;
              }
@@ -43,7 +53,7 @@
          }
  
          pathnodetype = this.checkNeighborBlocks(blockaccessIn, x, y, z, pathnodetype);
-@@ -417,16 +423,19 @@
+@@ -417,16 +426,19 @@
                  {
                      if (i != 0 || j != 0)
                      {
@@ -66,7 +76,7 @@
                      }
                  }
              }
-@@ -443,6 +452,9 @@
+@@ -443,6 +455,9 @@
          Block block = iblockstate.getBlock();
          Material material = iblockstate.getMaterial();
  
