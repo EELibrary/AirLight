@@ -148,7 +148,7 @@
          LOGGER.debug(textcomponenttranslation.getUnformattedText(), p_exceptionCaught_2_);
          this.closeChannel(textcomponenttranslation);
      }
- 
+-
 -    protected void channelRead0(ChannelHandlerContext p_channelRead0_1_, Packet<?> p_channelRead0_2_) throws Exception
 -    {
 -        if (this.channel.isOpen())
@@ -159,9 +159,10 @@
 -            }
 -            catch (ThreadQuickExitException var4)
 -            {
++    public static int ppsl = 4000;
 +    protected void channelRead0(ChannelHandlerContext p_channelRead0_1_, Packet<?> p_channelRead0_2_) throws Exception {
 +        if(!handlePacket.get()){return;}
-+        if(isOutOfBound(2000,p_channelRead0_1_.channel())){
++        if(isOutOfBound(ppsl,p_channelRead0_1_.channel())){
 +            handlePacket.set(false);
 +            return;
 +        }
@@ -356,7 +357,7 @@
 -
 -    public SocketAddress getRemoteAddress()
 -    {
-+    private final AtomicBoolean handlePacket = new AtomicBoolean(true);
++    public final AtomicBoolean handlePacket = new AtomicBoolean(true);
 +    public SocketAddress getRemoteAddress() {
          return this.socketAddress;
      }
