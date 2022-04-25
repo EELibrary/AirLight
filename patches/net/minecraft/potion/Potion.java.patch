@@ -1,6 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/potion/Potion.java
 +++ ../src-work/minecraft/net/minecraft/potion/Potion.java
-@@ -13,7 +13,9 @@
+@@ -4,6 +4,7 @@
+ import java.util.Map;
+ import java.util.UUID;
+ import java.util.Map.Entry;
++import java.util.concurrent.ConcurrentHashMap;
+ import javax.annotation.Nullable;
+ import net.minecraft.entity.Entity;
+ import net.minecraft.entity.EntityLivingBase;
+@@ -13,7 +14,9 @@
  import net.minecraft.entity.ai.attributes.IAttribute;
  import net.minecraft.entity.ai.attributes.IAttributeInstance;
  import net.minecraft.entity.player.EntityPlayer;
@@ -10,7 +18,7 @@
  import net.minecraft.util.DamageSource;
  import net.minecraft.util.ResourceLocation;
  import net.minecraft.util.StringUtils;
-@@ -21,16 +23,18 @@
+@@ -21,16 +24,18 @@
  import net.minecraft.util.registry.RegistryNamespaced;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
@@ -21,8 +29,9 @@
 +public class Potion extends net.minecraftforge.registries.IForgeRegistryEntry.Impl<Potion>
  {
 -    public static final RegistryNamespaced<ResourceLocation, Potion> REGISTRY = new RegistryNamespaced<ResourceLocation, Potion>();
+-    private final Map<IAttribute, AttributeModifier> attributeModifierMap = Maps.<IAttribute, AttributeModifier>newHashMap();
 +    public static final RegistryNamespaced<ResourceLocation, Potion> REGISTRY = net.minecraftforge.registries.GameData.getWrapper(Potion.class);
-     private final Map<IAttribute, AttributeModifier> attributeModifierMap = Maps.<IAttribute, AttributeModifier>newHashMap();
++    private final Map<IAttribute, AttributeModifier> attributeModifierMap = new ConcurrentHashMap<>();
      private final boolean isBadEffect;
      private final int liquidColor;
      private String name = "";
@@ -32,7 +41,7 @@
      private boolean beneficial;
  
      @Nullable
-@@ -78,14 +82,14 @@
+@@ -78,14 +83,14 @@
          {
              if (entityLivingBaseIn.getHealth() < entityLivingBaseIn.getMaxHealth())
              {
@@ -49,7 +58,7 @@
              }
          }
          else if (this == MobEffects.WITHER)
-@@ -100,7 +104,19 @@
+@@ -100,7 +105,19 @@
          {
              if (!entityLivingBaseIn.world.isRemote)
              {
@@ -70,7 +79,7 @@
              }
          }
          else if ((this != MobEffects.INSTANT_HEALTH || entityLivingBaseIn.isEntityUndead()) && (this != MobEffects.INSTANT_DAMAGE || !entityLivingBaseIn.isEntityUndead()))
-@@ -112,7 +128,7 @@
+@@ -112,7 +129,7 @@
          }
          else
          {
@@ -79,7 +88,7 @@
          }
      }
  
-@@ -222,7 +238,6 @@
+@@ -222,7 +239,6 @@
          return this.statusIconIndex;
      }
  
@@ -87,7 +96,7 @@
      public boolean isBadEffect()
      {
          return this.isBadEffect;
-@@ -293,7 +308,85 @@
+@@ -293,7 +309,85 @@
          return modifier.getAmount() * (double)(amplifier + 1);
      }
  
