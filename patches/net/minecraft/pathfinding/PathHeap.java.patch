@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/pathfinding/PathHeap.java
 +++ ../src-work/minecraft/net/minecraft/pathfinding/PathHeap.java
-@@ -1,102 +1,88 @@
+@@ -1,102 +1,90 @@
  package net.minecraft.pathfinding;
  
 -public class PathHeap
@@ -22,18 +22,27 @@
 -        {
 -            if (this.count == this.pathPoints.length)
 -            {
+-                PathPoint[] apathpoint = new PathPoint[this.count << 1];
+-                System.arraycopy(this.pathPoints, 0, apathpoint, 0, this.count);
+-                this.pathPoints = apathpoint;
+-            }
 +        } else {
-+            if (this.count == this.pathPoints.length) {
-                 PathPoint[] apathpoint = new PathPoint[this.count << 1];
-                 System.arraycopy(this.pathPoints, 0, apathpoint, 0, this.count);
-                 this.pathPoints = apathpoint;
-             }
++            synchronized (mutex) {
++                if (this.count == this.pathPoints.length) {
++                    PathPoint[] apathpoint = new PathPoint[this.count << 1];
++                    System.arraycopy(this.pathPoints, 0, apathpoint, 0, this.count);
++                    this.pathPoints = apathpoint;
++                }
  
-             this.pathPoints[this.count] = point;
+-            this.pathPoints[this.count] = point;
 -            point.index = this.count;
-+            point.index.set(this.count);
-             this.sortBack(this.count++);
-             return point;
+-            this.sortBack(this.count++);
+-            return point;
++                this.pathPoints[this.count] = point;
++                point.index.set(this.count);
++                this.sortBack(this.count++);
++                return point;
++            }
          }
      }
  
@@ -49,13 +58,12 @@
 -    public PathPoint dequeue()
 -    {
 -        PathPoint pathpoint = this.pathPoints[0];
--        this.pathPoints[0] = this.pathPoints[--this.count];
--        this.pathPoints[this.count] = null;
 +    public PathPoint dequeue() {
 +        PathPoint pathpoint = null;
++        pathpoint = this.pathPoints[0];
+         this.pathPoints[0] = this.pathPoints[--this.count];
+-        this.pathPoints[this.count] = null;
 +        synchronized (mutex) {
-+            pathpoint = this.pathPoints[0];
-+            this.pathPoints[0] = this.pathPoints[--this.count];
 +            this.pathPoints[this.count] = null;
 +        }
  
@@ -140,7 +148,7 @@
                  break;
              }
  
-@@ -105,47 +91,35 @@
+@@ -105,47 +93,35 @@
              PathPoint pathpoint2;
              float f2;
  
