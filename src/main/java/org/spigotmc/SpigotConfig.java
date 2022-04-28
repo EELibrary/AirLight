@@ -28,6 +28,7 @@ import org.bukkit.command.Command;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.skylight.config.AirLightConfig;
 
 public class SpigotConfig
 {
@@ -52,6 +53,8 @@ public class SpigotConfig
 
     public static void init(File configFile)
     {
+        AirLightConfig.init();
+        net.minecraft.entity.EntityTracker.init();
         CONFIG_FILE = configFile;
         config = new YamlConfiguration();
         try
@@ -241,6 +244,7 @@ public class SpigotConfig
         disableStatSaving = getBoolean( "stats.disable-saving", false );
 
         if ( !config.contains( "stats.forced-stats" ) ) {
+            config.createSection( "stats.forced-stats" );
             config.createSection( "stats.forced-stats" );
         }
 

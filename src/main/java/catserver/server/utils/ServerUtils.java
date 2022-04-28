@@ -12,8 +12,6 @@ import java.util.Properties;
 public class ServerUtils {
     public static void forceSaveWorlds() {
         CatServer.log.info("Force save worlds:");
-        boolean oldAsyncCatcher = AsyncCatcher.enabled;
-        AsyncCatcher.enabled = false;
 
         try {
             CatServer.log.info("Force saving players..");
@@ -32,7 +30,6 @@ public class ServerUtils {
             e.printStackTrace();
         }
 
-        AsyncCatcher.enabled = oldAsyncCatcher;
         CatServer.log.info("Force save complete!");
     }
 

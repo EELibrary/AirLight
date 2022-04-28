@@ -13,10 +13,11 @@
  import net.minecraft.crash.CrashReport;
  import net.minecraft.crash.CrashReportCategory;
  import net.minecraft.crash.ICrashReportDetail;
-@@ -47,199 +51,160 @@
+@@ -47,199 +51,165 @@
  import net.minecraftforge.fml.relauncher.SideOnly;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
++import org.skylight.config.AirLightConfig;
 +import wearblackallday.javautils.util.ThreadPool;
  
 -public class EntityTracker
@@ -29,19 +30,25 @@
 +    private final Set<EntityTrackerEntry> entries;
 +    public final IntHashMap<EntityTrackerEntry> trackedEntityHashTable;
      private int maxTrackingDistanceThreshold;
-+    private final java.util.concurrent.locks.ReentrantLock trackerLock = new java.util.concurrent.locks.ReentrantLock(); // Thermos - prevent entity tracking crashes
- 
+-
 -    public EntityTracker(WorldServer theWorldIn)
 -    {
++    private final java.util.concurrent.locks.ReentrantLock trackerLock = new java.util.concurrent.locks.ReentrantLock(); // Thermos - prevent entity tracking crashes
++    private static boolean wait = true;
++    private static int threads = Runtime.getRuntime().availableProcessors();
 +    public EntityTracker(WorldServer theWorldIn) {
 +        this.entries = ConcurrentHashMap.newKeySet();
 +        this.trackedEntityHashTable = new IntHashMap<EntityTrackerEntry>();
          this.world = theWorldIn;
          this.maxTrackingDistanceThreshold = theWorldIn.getMinecraftServer().getPlayerList().getEntityViewDistance();
      }
- 
+-
 -    public static long getPositionLong(double value)
 -    {
++    public static void init(){
++        wait = AirLightConfig.sectionMap.get("debug").getBoolean("wait-tracker");
++        threads = AirLightConfig.sectionMap.get("executor").getInt("tracker-thread-count");
++    }
 +    public static long getPositionLong(double value) {
          return MathHelper.lfloor(value * 4096.0D);
      }
@@ -299,7 +306,7 @@
                          s = "Maximum (" + s + ")";
                      }
  
-@@ -247,164 +212,158 @@
+@@ -247,164 +217,168 @@
                  }
              });
              entityIn.addEntityCrashInfo(crashreportcategory);
@@ -329,7 +336,6 @@
 -            for (EntityTrackerEntry entitytrackerentry : this.entries)
 -            {
 -                entitytrackerentry.removeFromTrackedPlayers(entityplayermp);
--            }
 +    public void untrack(Entity entityIn) {
 +        if (entityIn instanceof EntityPlayerMP) {
 +            EntityPlayerMP entityplayermp = (EntityPlayerMP) entityIn;
@@ -337,7 +343,9 @@
 +            executor.execute(this.entries,object->{
 +                object.removeFromTrackedPlayers(entityplayermp);
 +            });
-+            executor.awaitCompletion();
++            if(wait) {
++                executor.awaitCompletion();
+             }
 +            unlock();// TTCP
          }
  
@@ -359,7 +367,7 @@
 -
 -        for (EntityTrackerEntry entitytrackerentry : this.entries)
 -        {
-+    private final ThreadPool executor = new ThreadPool();
++    private final ThreadPool executor = new ThreadPool(threads);
 +    public void tick() {
 +        waitForLock();lock();// TTCP
 +        List<EntityPlayerMP> list = Collections.synchronizedList(Lists.newArrayList());
@@ -378,7 +386,10 @@
 +                    list.add((EntityPlayerMP) entity);
                  }
              }
--        }
++        });
++        if(wait) {
++            executor.awaitCompletion();
+         }
 -
 -        for (int i = 0; i < list.size(); ++i)
 -        {
@@ -388,8 +399,6 @@
 -            {
 -                if (entitytrackerentry1.getTrackedEntity() != entityplayermp)
 -                {
-+        });
-+        executor.awaitCompletion();
 +        unlock();
 +        for (EntityPlayerMP entityplayermp : list) {
 +            waitForLock();
@@ -398,9 +407,10 @@
 +                if (entitytrackerentry1.getTrackedEntity() != entityplayermp) {
                      entitytrackerentry1.updatePlayerEntity(entityplayermp);
                  }
--            }
 +            });
-+            executor.awaitCompletion();
++            if(wait) {
++                executor.awaitCompletion();
+             }
 +            unlock();
          }
      }
@@ -421,9 +431,10 @@
 +            } else {
                  entitytrackerentry.updatePlayerEntity(player);
              }
--        }
 +        });
-+        executor.awaitCompletion();
++        if(wait) {
++            executor.awaitCompletion();
+         }
      }
  
 -    public void sendToTracking(Entity entityIn, Packet<?> packetIn)
@@ -513,15 +524,16 @@
                      list1.add(entity);
                  }
              }
--        }
++        });
++        if(wait) {
++            executor.awaitCompletion();
+         }
 -
 -        if (!list.isEmpty())
 -        {
 -            for (Entity entity1 : list)
 -            {
 -                player.connection.sendPacket(new SPacketEntityAttach(entity1, ((EntityLiving)entity1).getLeashHolder()));
-+        });
-+        executor.awaitCompletion();
 +        unlock(); // TTCP
 +        if (!list.isEmpty()) {
 +            for (Entity entity1 : list) {

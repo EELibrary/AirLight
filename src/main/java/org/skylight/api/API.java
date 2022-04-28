@@ -1,6 +1,7 @@
 package org.skylight.api;
 
 import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import org.bukkit.entity.Minecart;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -30,6 +31,9 @@ public final class API {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static void spawnFakePlayer(String name){
     }
 
     public static void enablePPSLimitor(int pps){
