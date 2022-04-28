@@ -20,7 +20,7 @@ public class AirLightConfig {
                 file.createNewFile();
                 LogManager.getLogger().info("Config didn't detected!Creating");
                 config.options().copyDefaults(true);
-                config.options().header("This the config file of AirLight.Don't edit the debug section!");
+                config.options().header("The config file of AirLight.Don't edit the debug section!");
                 ConfigurationSection configurationSection = config.createSection("executor");
                 configurationSection.addDefault("entities-thread-count", Runtime.getRuntime().availableProcessors());
                 configurationSection.addDefault("entities-per-thread", 100);
