@@ -23,7 +23,7 @@
  import net.minecraft.util.text.TextComponentTranslation;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
-@@ -45,202 +51,175 @@
+@@ -45,202 +51,178 @@
  import org.apache.logging.log4j.Logger;
  import org.apache.logging.log4j.Marker;
  import org.apache.logging.log4j.MarkerManager;
@@ -159,11 +159,14 @@
 -            }
 -            catch (ThreadQuickExitException var4)
 -            {
-+    public static int ppsl = 4000;
++    public static int ppsl = 2000;
 +    protected void channelRead0(ChannelHandlerContext p_channelRead0_1_, Packet<?> p_channelRead0_2_) throws Exception {
-+        if(!handlePacket.get()){return;}
++        if(!handlePacket.get()){
++            return;
++        }
 +        if(isOutOfBound(ppsl,p_channelRead0_1_.channel())){
 +            handlePacket.set(false);
++            this.closeChannel(new TextComponentString("Packet spamming detected!Your PPS was out of "+ppsl));
 +            return;
 +        }
 +        if (this.channel.isOpen()) {
@@ -300,7 +303,7 @@
                          channelfuture1.addListeners(futureListeners);
                      }
  
-@@ -250,89 +229,107 @@
+@@ -250,89 +232,107 @@
          }
      }
  
@@ -361,18 +364,18 @@
 +    public SocketAddress getRemoteAddress() {
          return this.socketAddress;
      }
-+    public static boolean enablePPSLimitor = false;
++    public static boolean enablePPSLimitor = true;
 +    public boolean isOutOfBound(int pps,Channel channel){
 +        if(enablePPSLimitor) {
-+            long time = 1000 / pps;
++            long time = 1000000 / pps;
 +            boolean isOuted = false;
 +            if (!times.contains(channel)) {
-+                times.put(channel, System.currentTimeMillis());
++                times.put(channel, System.nanoTime());
 +            }
-+            if ((System.currentTimeMillis() - times.get(channel)) > time) {
++            if ((System.nanoTime() - times.get(channel)) < time) {
 +                isOuted = true;
 +            }
-+            times.replace(channel, System.currentTimeMillis());
++            times.replace(channel, System.nanoTime());
 +            return isOuted;
 +        }
 +        return false;
@@ -458,7 +461,7 @@
                      ;
                  }
  
-@@ -343,126 +340,105 @@
+@@ -343,126 +343,105 @@
      }
  
      @SideOnly(Side.CLIENT)
