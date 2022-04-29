@@ -37,7 +37,7 @@
  import net.minecraft.entity.passive.EntityWolf;
  import net.minecraft.entity.player.EntityPlayer;
  import net.minecraft.entity.player.EntityPlayerMP;
-@@ -43,7 +51,10 @@
+@@ -43,8 +51,12 @@
  import net.minecraft.item.ItemArmor;
  import net.minecraft.item.ItemElytra;
  import net.minecraft.item.ItemStack;
@@ -46,9 +46,11 @@
 +import net.minecraft.nbt.NBTTagFloat;
 +import net.minecraft.nbt.NBTTagInt;
  import net.minecraft.nbt.NBTTagList;
++import net.minecraft.network.NetworkManager;
  import net.minecraft.network.datasync.DataParameter;
  import net.minecraft.network.datasync.DataSerializers;
-@@ -76,25 +87,39 @@
+ import net.minecraft.network.datasync.EntityDataManager;
+@@ -76,25 +88,39 @@
  import net.minecraftforge.fml.relauncher.SideOnly;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -91,7 +93,7 @@
      public int arrowHitTimer;
      public int hurtTime;
      public int maxHurtTime;
-@@ -116,7 +141,7 @@
+@@ -116,7 +142,7 @@
      public float rotationYawHead;
      public float prevRotationYawHead;
      public float jumpMovementFactor = 0.02F;
@@ -100,7 +102,7 @@
      protected int recentlyHit;
      protected boolean dead;
      protected int idleTime;
-@@ -126,7 +151,7 @@
+@@ -126,7 +152,7 @@
      protected float prevMovedDistance;
      protected float unused180;
      protected int scoreValue;
@@ -109,7 +111,7 @@
      protected boolean isJumping;
      public float moveStrafing;
      public float moveVertical;
-@@ -138,9 +163,9 @@
+@@ -138,9 +164,9 @@
      protected double interpTargetZ;
      protected double interpTargetYaw;
      protected double interpTargetPitch;
@@ -122,7 +124,7 @@
      private EntityLivingBase lastAttackedEntity;
      private int lastAttackedEntityTime;
      private float landMovementFactor;
-@@ -153,6 +178,21 @@
+@@ -153,6 +179,21 @@
      private DamageSource lastDamageSource;
      private long lastDamageStamp;
  
@@ -144,7 +146,7 @@
      public void onKillCommand()
      {
          this.attackEntityFrom(DamageSource.OUT_OF_WORLD, Float.MAX_VALUE);
-@@ -162,7 +202,9 @@
+@@ -162,7 +203,9 @@
      {
          super(worldIn);
          this.applyEntityAttributes();
@@ -155,7 +157,7 @@
          this.preventEntitySpawning = true;
          this.randomUnused1 = (float)((Math.random() + 1.0D) * 0.009999999776482582D);
          this.setPosition(this.posX, this.posY, this.posZ);
-@@ -188,6 +230,7 @@
+@@ -188,6 +231,7 @@
          this.getAttributeMap().registerAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
          this.getAttributeMap().registerAttribute(SharedMonsterAttributes.ARMOR);
          this.getAttributeMap().registerAttribute(SharedMonsterAttributes.ARMOR_TOUGHNESS);
@@ -163,7 +165,7 @@
      }
  
      protected void updateFallState(double y, boolean onGroundIn, IBlockState state, BlockPos pos)
-@@ -201,11 +244,21 @@
+@@ -201,11 +245,21 @@
          {
              float f = (float)MathHelper.ceil(this.fallDistance - 3.0F);
  
@@ -187,7 +189,7 @@
              }
          }
  
-@@ -257,7 +310,12 @@
+@@ -257,7 +311,12 @@
          {
              if (!this.isInsideOfMaterial(Material.WATER))
              {
@@ -201,7 +203,7 @@
              }
              else
              {
-@@ -281,7 +339,7 @@
+@@ -281,7 +340,7 @@
                      }
                  }
  
@@ -210,7 +212,7 @@
                  {
                      this.dismountRidingEntity();
                  }
-@@ -356,6 +414,16 @@
+@@ -356,6 +415,16 @@
          this.world.profiler.endSection();
      }
  
@@ -227,7 +229,7 @@
      protected void frostWalk(BlockPos pos)
      {
          int i = EnchantmentHelper.getMaxEnchantmentLevel(Enchantments.FROST_WALKER, this);
-@@ -375,19 +443,18 @@
+@@ -375,19 +444,18 @@
      {
          ++this.deathTime;
  
@@ -252,7 +254,7 @@
  
              this.setDead();
  
-@@ -563,6 +630,15 @@
+@@ -563,6 +631,15 @@
              }
          }
  
@@ -268,7 +270,7 @@
          if (compound.hasKey("Health", 99))
          {
              this.setHealth(compound.getFloat("Health"));
-@@ -589,10 +665,13 @@
+@@ -589,10 +666,13 @@
          }
      }
  
@@ -283,7 +285,7 @@
          try
          {
              while (iterator.hasNext())
-@@ -602,7 +681,7 @@
+@@ -602,7 +682,7 @@
  
                  if (!potioneffect.onUpdate(this))
                  {
@@ -292,7 +294,7 @@
                      {
                          iterator.remove();
                          this.onFinishedPotionEffect(potioneffect);
-@@ -619,6 +698,16 @@
+@@ -619,6 +699,16 @@
              ;
          }
  
@@ -309,7 +311,7 @@
          if (this.potionsNeedUpdate)
          {
              if (!this.world.isRemote)
-@@ -670,8 +759,10 @@
+@@ -670,8 +760,10 @@
          else
          {
              Collection<PotionEffect> collection = this.activePotionsMap.values();
@@ -322,7 +324,7 @@
              this.setInvisible(this.isPotionActive(MobEffects.INVISIBILITY));
          }
      }
-@@ -703,7 +794,10 @@
+@@ -703,7 +795,10 @@
  
              while (iterator.hasNext())
              {
@@ -334,7 +336,7 @@
                  iterator.remove();
              }
          }
-@@ -732,10 +826,15 @@
+@@ -732,10 +827,15 @@
  
      public void addPotionEffect(PotionEffect potioneffectIn)
      {
@@ -350,7 +352,7 @@
              if (potioneffect == null)
              {
                  this.activePotionsMap.put(potioneffectIn.getPotion(), potioneffectIn);
-@@ -751,6 +850,9 @@
+@@ -751,6 +851,9 @@
  
      public boolean isPotionApplicable(PotionEffect potioneffectIn)
      {
@@ -360,7 +362,7 @@
          if (this.getCreatureAttribute() == EnumCreatureAttribute.UNDEAD)
          {
              Potion potion = potioneffectIn.getPotion();
-@@ -772,11 +874,16 @@
+@@ -772,11 +875,16 @@
      @Nullable
      public PotionEffect removeActivePotionEffect(@Nullable Potion potioneffectin)
      {
@@ -377,7 +379,7 @@
          PotionEffect potioneffect = this.removeActivePotionEffect(potionIn);
  
          if (potioneffect != null)
-@@ -817,28 +924,63 @@
+@@ -817,28 +925,63 @@
          }
      }
  
@@ -442,7 +444,7 @@
          if (this.isEntityInvulnerable(source))
          {
              return false;
-@@ -863,15 +1005,17 @@
+@@ -863,15 +1006,17 @@
              {
                  float f = amount;
  
@@ -463,7 +465,7 @@
                  {
                      this.damageShield(amount);
                      amount = 0.0F;
-@@ -896,22 +1040,38 @@
+@@ -896,22 +1041,38 @@
                  {
                      if (amount <= this.lastDamage)
                      {
@@ -504,7 +506,7 @@
                  this.attackedAtYaw = 0.0F;
                  Entity entity1 = source.getTrueSource();
  
-@@ -927,9 +1087,9 @@
+@@ -927,9 +1088,9 @@
                          this.recentlyHit = 100;
                          this.attackingPlayer = (EntityPlayer)entity1;
                      }
@@ -516,7 +518,7 @@
  
                          if (entitywolf.isTamed())
                          {
-@@ -1049,22 +1209,28 @@
+@@ -1049,22 +1210,28 @@
          else
          {
              ItemStack itemstack = null;
@@ -551,7 +553,7 @@
                  {
                      EntityPlayerMP entityplayermp = (EntityPlayerMP)this;
                      entityplayermp.addStat(StatList.getObjectUseStats(Items.TOTEM_OF_UNDYING));
-@@ -1078,7 +1244,8 @@
+@@ -1078,7 +1245,8 @@
                  this.world.setEntityState(this, (byte)35);
              }
  
@@ -561,7 +563,7 @@
          }
      }
  
-@@ -1127,7 +1294,7 @@
+@@ -1127,7 +1295,7 @@
  
      public void renderBrokenItemStack(ItemStack stack)
      {
@@ -570,7 +572,7 @@
  
          for (int i = 0; i < 5; ++i)
          {
-@@ -1139,12 +1306,17 @@
+@@ -1139,12 +1307,17 @@
              vec3d1 = vec3d1.rotatePitch(-this.rotationPitch * 0.017453292F);
              vec3d1 = vec3d1.rotateYaw(-this.rotationYaw * 0.017453292F);
              vec3d1 = vec3d1.addVector(this.posX, this.posY + (double)this.getEyeHeight(), this.posZ);
@@ -589,7 +591,7 @@
          if (!this.dead)
          {
              Entity entity = cause.getTrueSource();
-@@ -1165,18 +1337,42 @@
+@@ -1165,18 +1338,42 @@
  
              if (!this.world.isRemote)
              {
@@ -637,7 +639,7 @@
              }
  
              this.world.setEntityState(this, (byte)3);
-@@ -1195,6 +1391,9 @@
+@@ -1195,6 +1392,9 @@
  
      public void knockBack(Entity entityIn, float strength, double xRatio, double zRatio)
      {
@@ -647,7 +649,7 @@
          if (this.rand.nextDouble() >= this.getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).getAttributeValue())
          {
              this.isAirBorne = true;
-@@ -1253,15 +1452,7 @@
+@@ -1253,15 +1453,7 @@
              BlockPos blockpos = new BlockPos(i, j, k);
              IBlockState iblockstate = this.world.getBlockState(blockpos);
              Block block = iblockstate.getBlock();
@@ -664,7 +666,7 @@
          }
      }
  
-@@ -1287,6 +1478,9 @@
+@@ -1287,6 +1479,9 @@
  
      public void fall(float distance, float damageMultiplier)
      {
@@ -674,7 +676,7 @@
          super.fall(distance, damageMultiplier);
          PotionEffect potioneffect = this.getActivePotionEffect(MobEffects.JUMP_BOOST);
          float f = potioneffect == null ? 0.0F : (float)(potioneffect.getAmplifier() + 1);
-@@ -1294,8 +1488,11 @@
+@@ -1294,8 +1489,11 @@
  
          if (i > 0)
          {
@@ -687,7 +689,7 @@
              int j = MathHelper.floor(this.posX);
              int k = MathHelper.floor(this.posY - 0.20000000298023224D);
              int l = MathHelper.floor(this.posZ);
-@@ -1303,7 +1500,7 @@
+@@ -1303,7 +1501,7 @@
  
              if (iblockstate.getMaterial() != Material.AIR)
              {
@@ -696,7 +698,7 @@
                  this.playSound(soundtype.getFallSound(), soundtype.getVolume() * 0.5F, soundtype.getPitch() * 0.75F);
              }
          }
-@@ -1335,7 +1532,7 @@
+@@ -1335,7 +1533,7 @@
      {
          if (!source.isUnblockable())
          {
@@ -705,7 +707,7 @@
              damage = CombatRules.getDamageAfterAbsorb(damage, (float)this.getTotalArmorValue(), (float)this.getEntityAttribute(SharedMonsterAttributes.ARMOR_TOUGHNESS).getAttributeValue());
          }
  
-@@ -1350,7 +1547,8 @@
+@@ -1350,7 +1548,8 @@
          }
          else
          {
@@ -715,7 +717,7 @@
              {
                  int i = (this.getActivePotionEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
-@@ -1378,24 +1576,187 @@
+@@ -1378,24 +1577,187 @@
  
      protected void damageEntity(DamageSource damageSrc, float damageAmount)
      {
@@ -904,7 +906,7 @@
      public CombatTracker getCombatTracker()
      {
          return this._combatTracker;
-@@ -1447,6 +1808,11 @@
+@@ -1447,6 +1809,11 @@
  
      public void swingArm(EnumHand hand)
      {
@@ -916,7 +918,7 @@
          if (!this.isSwingInProgress || this.swingProgressInt >= this.getArmSwingAnimationEnd() / 2 || this.swingProgressInt < 0)
          {
              this.swingProgressInt = -1;
-@@ -1570,6 +1936,7 @@
+@@ -1570,6 +1937,7 @@
          if (this.attributeMap == null)
          {
              this.attributeMap = new AttributeMap();
@@ -924,7 +926,7 @@
          }
  
          return this.attributeMap;
-@@ -1694,7 +2061,7 @@
+@@ -1694,7 +2062,7 @@
  
                      if (!this.world.collidesWithAnyBlock(axisalignedbb1))
                      {
@@ -933,7 +935,7 @@
                          {
                              this.setPositionAndUpdate(d11, this.posY + 1.0D, d12);
                              return;
-@@ -1702,14 +2069,14 @@
+@@ -1702,14 +2070,14 @@
  
                          BlockPos blockpos = new BlockPos(d11, this.posY - 1.0D, d12);
  
@@ -950,7 +952,7 @@
                      {
                          d1 = d11;
                          d13 = this.posY + 2.0D;
-@@ -1781,16 +2148,17 @@
+@@ -1781,16 +2149,17 @@
          }
  
          this.isAirBorne = true;
@@ -970,7 +972,7 @@
      }
  
      protected float getWaterSlowDown()
-@@ -1864,7 +2232,8 @@
+@@ -1864,7 +2233,8 @@
  
                          if (this.onGround && !this.world.isRemote)
                          {
@@ -980,7 +982,7 @@
                          }
                      }
                      else
-@@ -1874,7 +2243,8 @@
+@@ -1874,7 +2244,8 @@
  
                          if (this.onGround)
                          {
@@ -990,7 +992,7 @@
                          }
  
                          float f7 = 0.16277136F / (f6 * f6 * f6);
-@@ -1894,7 +2264,8 @@
+@@ -1894,7 +2265,8 @@
  
                          if (this.onGround)
                          {
@@ -1000,7 +1002,7 @@
                          }
  
                          if (this.isOnLadder())
-@@ -2054,6 +2425,8 @@
+@@ -2054,6 +2426,8 @@
  
      public void onUpdate()
      {
@@ -1009,7 +1011,7 @@
          super.onUpdate();
          this.updateActiveHand();
  
-@@ -2096,7 +2469,9 @@
+@@ -2096,7 +2470,9 @@
  
                  if (!ItemStack.areItemStacksEqual(itemstack1, itemstack))
                  {
@@ -1019,7 +1021,7 @@
  
                      if (!itemstack.isEmpty())
                      {
-@@ -2135,7 +2510,9 @@
+@@ -2135,7 +2511,9 @@
              }
          }
  
@@ -1029,7 +1031,7 @@
          double d0 = this.posX - this.prevPosX;
          double d1 = this.posZ - this.prevPosZ;
          float f3 = (float)(d0 * d0 + d1 * d1);
-@@ -2228,6 +2605,7 @@
+@@ -2228,6 +2606,7 @@
          {
              this.ticksElytraFlying = 0;
          }
@@ -1037,7 +1039,7 @@
      }
  
      protected float updateDistance(float p_110146_1_, float p_110146_2_)
-@@ -2304,7 +2682,7 @@
+@@ -2304,7 +2683,7 @@
          }
  
          this.world.profiler.startSection("ai");
@@ -1046,7 +1048,7 @@
          if (this.isMovementBlocked())
          {
              this.isJumping = false;
-@@ -2318,6 +2696,7 @@
+@@ -2318,6 +2697,7 @@
              this.updateEntityActionState();
              this.world.profiler.endSection();
          }
@@ -1054,7 +1056,7 @@
  
          this.world.profiler.endSection();
          this.world.profiler.startSection("jump");
-@@ -2349,10 +2728,14 @@
+@@ -2349,10 +2729,14 @@
          this.moveForward *= 0.98F;
          this.randomYawVelocity *= 0.9F;
          this.updateElytra();
@@ -1069,7 +1071,7 @@
          this.world.profiler.endSection();
      }
  
-@@ -2385,7 +2768,8 @@
+@@ -2385,7 +2769,8 @@
  
          if (!this.world.isRemote)
          {
@@ -1079,7 +1081,7 @@
          }
      }
  
-@@ -2419,9 +2803,13 @@
+@@ -2419,9 +2804,13 @@
                  }
              }
  
@@ -1094,7 +1096,7 @@
                  this.collideWithEntity(entity);
              }
          }
-@@ -2519,12 +2907,12 @@
+@@ -2519,12 +2908,12 @@
  
      public boolean canBeCollidedWith()
      {
@@ -1109,7 +1111,7 @@
      }
  
      protected void markVelocityChanged()
-@@ -2575,6 +2963,40 @@
+@@ -2575,6 +2964,40 @@
          this.potionsNeedUpdate = true;
      }
  
@@ -1150,7 +1152,7 @@
      public abstract EnumHandSide getPrimaryHand();
  
      public boolean isHandActive()
-@@ -2592,15 +3014,23 @@
+@@ -2592,15 +3015,23 @@
          if (this.isHandActive())
          {
              ItemStack itemstack = this.getHeldItem(this.getActiveHand());
@@ -1175,7 +1177,7 @@
                  {
                      this.onItemUseFinish();
                  }
-@@ -2618,8 +3048,10 @@
+@@ -2618,8 +3049,10 @@
  
          if (!itemstack.isEmpty() && !this.isHandActive())
          {
@@ -1187,7 +1189,7 @@
  
              if (!this.world.isRemote)
              {
-@@ -2700,7 +3132,27 @@
+@@ -2700,7 +3133,27 @@
          if (!this.activeItemStack.isEmpty() && this.isHandActive())
          {
              this.updateItemUse(this.activeItemStack, 16);
@@ -1216,7 +1218,7 @@
              this.resetActiveHand();
          }
      }
-@@ -2724,7 +3176,8 @@
+@@ -2724,7 +3177,8 @@
      {
          if (!this.activeItemStack.isEmpty())
          {
@@ -1226,7 +1228,7 @@
          }
  
          this.resetActiveHand();
-@@ -2808,11 +3261,14 @@
+@@ -2808,11 +3262,14 @@
  
              if (flag1)
              {
@@ -1246,7 +1248,7 @@
                  }
              }
          }
-@@ -2847,11 +3303,41 @@
+@@ -2847,11 +3304,41 @@
          }
      }
  
@@ -1288,7 +1290,7 @@
      public boolean attackable()
      {
          return true;
-@@ -2861,4 +3347,30 @@
+@@ -2861,4 +3348,30 @@
      public void setPartying(BlockPos pos, boolean p_191987_2_)
      {
      }

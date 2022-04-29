@@ -364,7 +364,7 @@
 +    public SocketAddress getRemoteAddress() {
          return this.socketAddress;
      }
-+    public static boolean enablePPSLimitor = true;
++    public static boolean enablePPSLimitor = false;
 +    public boolean isOutOfBound(int pps,Channel channel){
 +        if(enablePPSLimitor) {
 +            long time = 1000000 / pps;
