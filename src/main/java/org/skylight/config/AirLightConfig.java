@@ -23,7 +23,7 @@ public class AirLightConfig {
                 config.options().header("The config file of AirLight.Don't edit the debug section!");
                 ConfigurationSection configurationSection = config.createSection("executor");
                 configurationSection.addDefault("entities-thread-count", Runtime.getRuntime().availableProcessors());
-                configurationSection.addDefault("entities-per-thread", 100);
+                configurationSection.addDefault("entities-per-thread", 20);
                 configurationSection.addDefault("tile-entities-thread-count", Runtime.getRuntime().availableProcessors());
                 configurationSection.addDefault("weather-effects-thread-count", Runtime.getRuntime().availableProcessors());
                 configurationSection.addDefault("tracker-thread-count", Runtime.getRuntime().availableProcessors());
