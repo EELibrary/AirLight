@@ -141,7 +141,7 @@
                          pathpoint2.distanceToTarget = pathpoint2.totalPathDistance + pathpoint2.distanceToNext;
                          this.path.addPoint(pathpoint2);
                      }
-@@ -108,36 +102,28 @@
+@@ -108,36 +102,26 @@
              }
          }
  
@@ -160,36 +160,26 @@
  
 -    private Path createPath(PathPoint start, PathPoint end)
 -    {
--        int i = 1;
++    private Path createPath(PathPoint start, PathPoint end) {
+         int i = 1;
 -
 -        for (PathPoint pathpoint = end; pathpoint.previous != null; pathpoint = pathpoint.previous)
 -        {
--            ++i;
--        }
++        for (PathPoint pathpoint = end; pathpoint.previous != null; pathpoint = pathpoint.previous) {
+             ++i;
+         }
 -
--        PathPoint[] apathpoint = new PathPoint[i];
--        PathPoint pathpoint1 = end;
--        --i;
+         PathPoint[] apathpoint = new PathPoint[i];
+         PathPoint pathpoint1 = end;
+         --i;
 -
 -        for (apathpoint[i] = end; pathpoint1.previous != null; apathpoint[i] = pathpoint1)
 -        {
--            pathpoint1 = pathpoint1.previous;
-+    private Path createPath(PathPoint start, PathPoint end) {
-+        synchronized (mutex) {
-+            int i = 1;
-+            for (PathPoint pathpoint = end; pathpoint.previous != null; pathpoint = pathpoint.previous) {
-+                ++i;
-+            }
-+            PathPoint[] apathpoint = new PathPoint[i];
-+            PathPoint pathpoint1 = end;
++        for (apathpoint[i] = end; pathpoint1.previous != null; apathpoint[i] = pathpoint1) {
+             pathpoint1 = pathpoint1.previous;
              --i;
-+            for (apathpoint[i] = end; pathpoint1.previous != null; apathpoint[i] = pathpoint1) {
-+                pathpoint1 = pathpoint1.previous;
-+                --i;
-+            }
-+            return new Path(apathpoint);
          }
 -
--        return new Path(apathpoint);
+         return new Path(apathpoint);
      }
  }
