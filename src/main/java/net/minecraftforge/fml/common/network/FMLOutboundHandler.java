@@ -212,7 +212,7 @@ public class FMLOutboundHandler extends ChannelOutboundHandlerAdapter {
             {
                 if (!(args instanceof TargetPoint))
                 {
-                    throw new RuntimeException("ALLAROUNDPOINT expects a TargetPoint argument");
+                    throw new IllegalArgumentException("ALLAROUNDPOINT expects a TargetPoint argument");
                 }
             }
 

@@ -1,6 +1,28 @@
 --- ../src-base/minecraft/net/minecraft/world/storage/MapStorage.java
 +++ ../src-work/minecraft/net/minecraft/world/storage/MapStorage.java
-@@ -56,9 +56,14 @@
+@@ -9,6 +9,8 @@
+ import java.io.FileOutputStream;
+ import java.util.List;
+ import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.CopyOnWriteArrayList;
+ import javax.annotation.Nullable;
+ import net.minecraft.nbt.CompressedStreamTools;
+ import net.minecraft.nbt.NBTBase;
+@@ -18,9 +20,9 @@
+ public class MapStorage
+ {
+     private final ISaveHandler saveHandler;
+-    protected Map<String, WorldSavedData> loadedDataMap = Maps.<String, WorldSavedData>newHashMap();
+-    private final List<WorldSavedData> loadedDataList = Lists.<WorldSavedData>newArrayList();
+-    private final Map<String, Short> idCounts = Maps.<String, Short>newHashMap();
++    protected Map<String, WorldSavedData> loadedDataMap = new ConcurrentHashMap<>();
++    private final List<WorldSavedData> loadedDataList = new CopyOnWriteArrayList();
++    private final Map<String, Short> idCounts = new ConcurrentHashMap<>();
+ 
+     public MapStorage(ISaveHandler saveHandlerIn)
+     {
+@@ -56,9 +58,14 @@
                              throw new RuntimeException("Failed to instantiate " + clazz, exception);
                          }
  
@@ -18,7 +40,22 @@
                          worldsaveddata.readFromNBT(nbttagcompound.getCompoundTag("data"));
                      }
                  }
-@@ -114,10 +119,21 @@
+@@ -91,12 +98,8 @@
+ 
+     public void saveAllData()
+     {
+-        for (int i = 0; i < this.loadedDataList.size(); ++i)
+-        {
+-            WorldSavedData worldsaveddata = this.loadedDataList.get(i);
+-
+-            if (worldsaveddata.isDirty())
+-            {
++        for (WorldSavedData worldsaveddata : this.loadedDataList) {
++            if (worldsaveddata.isDirty()) {
+                 this.saveData(worldsaveddata);
+                 worldsaveddata.setDirty(false);
+             }
+@@ -114,10 +117,21 @@
                  if (file1 != null)
                  {
                      NBTTagCompound nbttagcompound = new NBTTagCompound();
