@@ -17,6 +17,10 @@ public class ForkJoinTraverse extends AbstractExecutorService {
         pool = new ForkJoinPool(threads);
     }
 
+    public String toString(){
+        return "ForkJoinTraverse using ForkJoinPool : "+pool.toString();
+    }
+
     public ForkJoinTraverse() {
         this(Runtime.getRuntime().availableProcessors());
     }
