@@ -1,6 +1,25 @@
 --- ../src-base/minecraft/net/minecraft/village/VillageCollection.java
 +++ ../src-work/minecraft/net/minecraft/village/VillageCollection.java
-@@ -151,6 +151,7 @@
+@@ -3,6 +3,7 @@
+ import com.google.common.collect.Lists;
+ import java.util.Iterator;
+ import java.util.List;
++import java.util.concurrent.CopyOnWriteArrayList;
+ import javax.annotation.Nullable;
+ import net.minecraft.block.Block;
+ import net.minecraft.block.BlockDoor;
+@@ -19,8 +20,8 @@
+ public class VillageCollection extends WorldSavedData
+ {
+     private World world;
+-    private final List<BlockPos> villagerPositionsList = Lists.<BlockPos>newArrayList();
+-    private final List<VillageDoorInfo> newDoors = Lists.<VillageDoorInfo>newArrayList();
++    private final List<BlockPos> villagerPositionsList = new CopyOnWriteArrayList<>();
++    private final List<VillageDoorInfo> newDoors = Lists.newArrayList();
+     private final List<Village> villageList = Lists.<Village>newArrayList();
+     private int tickCounter;
+ 
+@@ -151,6 +152,7 @@
  
      private void addDoorsAround(BlockPos central)
      {

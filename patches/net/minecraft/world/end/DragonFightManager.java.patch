@@ -16,7 +16,21 @@
  
          if (this.exitPortalLocation != null)
          {
-@@ -533,6 +535,14 @@
+@@ -135,11 +137,9 @@
+         }
+ 
+         NBTTagList nbttaglist = new NBTTagList();
+-        Iterator iterator = this.gateways.iterator();
+ 
+-        while (iterator.hasNext())
+-        {
+-            int i = ((Integer)iterator.next()).intValue();
++        for (Integer gateway : this.gateways) {
++            int i = gateway.intValue();
+             nbttaglist.appendTag(new NBTTagInt(i));
+         }
+ 
+@@ -533,6 +533,14 @@
                      return;
                  }
  
@@ -31,7 +45,7 @@
                  list1.addAll(list);
              }
  
-@@ -582,4 +592,14 @@
+@@ -582,4 +590,14 @@
              }
          }
      }

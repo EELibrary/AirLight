@@ -28,10 +28,8 @@ public class IteraingSafelyList<E> implements List<E> {
 
     @Override
     public Iterator<E> iterator() {
-
-
+        List bak = new Vector(backing);
         return new Iterator<E>() {
-            private List bak = new Vector(backing);
             private final AtomicReference<E> valueNow = new AtomicReference<>();
             private final Iterator<E> itr = bak.iterator();
 

@@ -11,7 +11,7 @@
  import java.util.Random;
  import java.util.Set;
  import net.minecraft.block.Block;
-@@ -21,12 +24,34 @@
+@@ -21,12 +24,30 @@
  import net.minecraft.util.math.MathHelper;
  import net.minecraft.world.biome.Biome;
  import net.minecraft.world.chunk.Chunk;
@@ -28,15 +28,11 @@
 +    private int getEntityCount(WorldServer server, Class oClass)
 +    {
 +        int i = 0;
-+        Iterator<ChunkPos> it = this.eligibleChunksForSpawning.iterator();
-+        while ( it.hasNext() )
-+        {
-+            ChunkPos coord = it.next();
++        for (ChunkPos coord : this.eligibleChunksForSpawning) {
 +            int x = coord.x;
 +            int z = coord.z;
-+            if ( !((ChunkProviderServer)server.chunkProvider).droppedChunksSet.contains( coord ) && server.isChunkLoaded( x, z, true ) )
-+            {
-+                i += Objects.requireNonNull(server.getChunkProvider().getLoadedChunk(x, z)).entityCount.get( oClass );
++            if (!((ChunkProviderServer) server.chunkProvider).droppedChunksSet.contains(coord) && server.isChunkLoaded(x, z, true)) {
++                i += Objects.requireNonNull(server.getChunkProvider().getLoadedChunk(x, z)).entityCount.get(oClass);
 +            }
 +        }
 +        return i;
@@ -46,7 +42,7 @@
      public int findChunksForSpawning(WorldServer worldServerIn, boolean spawnHostileMobs, boolean spawnPeacefulMobs, boolean spawnOnSetTickRate)
      {
          if (!spawnHostileMobs && !spawnPeacefulMobs)
-@@ -46,11 +71,15 @@
+@@ -46,11 +67,15 @@
                      int k = MathHelper.floor(entityplayer.posZ / 16.0D);
                      int l = 8;
  
@@ -67,7 +63,7 @@
                              ChunkPos chunkpos = new ChunkPos(i1 + j, j1 + k);
  
                              if (!this.eligibleChunksForSpawning.contains(chunkpos))
-@@ -77,18 +106,43 @@
+@@ -77,18 +102,43 @@
  
              for (EnumCreatureType enumcreaturetype : EnumCreatureType.values())
              {
@@ -114,7 +110,7 @@
                              BlockPos blockpos = getRandomChunkPosition(worldServerIn, chunkpos1.x, chunkpos1.z);
                              int k1 = blockpos.getX();
                              int l1 = blockpos.getY();
-@@ -136,7 +190,7 @@
+@@ -136,7 +186,7 @@
  
                                                  try
                                                  {
@@ -123,7 +119,7 @@
                                                  }
                                                  catch (Exception exception)
                                                  {
-@@ -146,21 +200,25 @@
+@@ -146,21 +196,25 @@
  
                                                  entityliving.setLocationAndAngles((double)f, (double)i3, (double)f1, worldServerIn.rand.nextFloat() * 360.0F, 0.0F);
  
@@ -153,7 +149,7 @@
                                                      {
                                                          continue label134;
                                                      }
-@@ -219,6 +277,14 @@
+@@ -219,6 +273,14 @@
          }
          else
          {
@@ -168,7 +164,7 @@
              IBlockState iblockstate = worldIn.getBlockState(pos);
  
              if (spawnPlacementTypeIn == EntityLiving.SpawnPlacementType.IN_WATER)
-@@ -228,8 +294,9 @@
+@@ -228,8 +290,9 @@
              else
              {
                  BlockPos blockpos = pos.down();
@@ -179,7 +175,7 @@
                  {
                      return false;
                  }
-@@ -273,7 +340,7 @@
+@@ -273,7 +336,7 @@
  
                              try
                              {
@@ -188,7 +184,7 @@
                              }
                              catch (Exception exception)
                              {
-@@ -281,9 +348,13 @@
+@@ -281,9 +344,13 @@
                                  continue;
                              }
  

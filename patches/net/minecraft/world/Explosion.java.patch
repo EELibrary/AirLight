@@ -1,6 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/world/Explosion.java
 +++ ../src-work/minecraft/net/minecraft/world/Explosion.java
-@@ -13,9 +13,12 @@
+@@ -7,17 +7,23 @@
+ import java.util.Map;
+ import java.util.Random;
+ import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.CopyOnWriteArrayList;
+ import javax.annotation.Nullable;
+ import net.minecraft.block.Block;
+ import net.minecraft.block.material.Material;
  import net.minecraft.block.state.IBlockState;
  import net.minecraft.enchantment.EnchantmentProtection;
  import net.minecraft.entity.Entity;
@@ -12,8 +20,11 @@
 +import net.minecraft.entity.projectile.EntityFireball;
  import net.minecraft.init.Blocks;
  import net.minecraft.init.SoundEvents;
++import net.minecraft.server.MinecraftServer;
  import net.minecraft.util.DamageSource;
-@@ -27,6 +30,10 @@
+ import net.minecraft.util.EnumParticleTypes;
+ import net.minecraft.util.SoundCategory;
+@@ -27,6 +33,10 @@
  import net.minecraft.util.math.Vec3d;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
@@ -24,7 +35,7 @@
  
  public class Explosion
  {
-@@ -37,11 +44,14 @@
+@@ -37,11 +47,14 @@
      private final double x;
      private final double y;
      private final double z;
@@ -40,8 +51,14 @@
      @SideOnly(Side.CLIENT)
      public Explosion(World worldIn, Entity entityIn, double x, double y, double z, float size, List<BlockPos> affectedPositions)
      {
-@@ -62,16 +72,21 @@
-         this.playerKnockbackMap = Maps.<EntityPlayer, Vec3d>newHashMap();
+@@ -58,20 +71,25 @@
+     public Explosion(World worldIn, Entity entityIn, double x, double y, double z, float size, boolean flaming, boolean damagesTerrain)
+     {
+         this.random = new Random();
+-        this.affectedBlockPositions = Lists.<BlockPos>newArrayList();
+-        this.playerKnockbackMap = Maps.<EntityPlayer, Vec3d>newHashMap();
++        this.affectedBlockPositions = new CopyOnWriteArrayList<>();
++        this.playerKnockbackMap = new ConcurrentHashMap<>();
          this.world = worldIn;
          this.exploder = entityIn;
 -        this.size = size;
@@ -63,7 +80,7 @@
          Set<BlockPos> set = Sets.<BlockPos>newHashSet();
          int i = 16;
  
-@@ -102,11 +117,11 @@
+@@ -102,11 +120,11 @@
  
                              if (iblockstate.getMaterial() != Material.AIR)
                              {
@@ -77,7 +94,7 @@
                              {
                                  set.add(blockpos);
                              }
-@@ -129,6 +144,7 @@
+@@ -129,6 +147,7 @@
          int j2 = MathHelper.floor(this.z - (double)f3 - 1.0D);
          int j1 = MathHelper.floor(this.z + (double)f3 + 1.0D);
          List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(this.exploder, new AxisAlignedBB((double)k1, (double)i2, (double)j2, (double)l1, (double)i1, (double)j1));
@@ -85,7 +102,7 @@
          Vec3d vec3d = new Vec3d(this.x, this.y, this.z);
  
          for (int k2 = 0; k2 < list.size(); ++k2)
-@@ -151,9 +167,16 @@
+@@ -151,9 +170,16 @@
                          d5 = d5 / d13;
                          d7 = d7 / d13;
                          d9 = d9 / d13;
@@ -104,7 +121,7 @@
                          double d11 = d10;
  
                          if (entity instanceof EntityLivingBase)
-@@ -195,6 +218,48 @@
+@@ -195,6 +221,48 @@
  
          if (this.damagesTerrain)
          {
@@ -153,14 +170,14 @@
              for (BlockPos blockpos : this.affectedBlockPositions)
              {
                  IBlockState iblockstate = this.world.getBlockState(blockpos);
-@@ -225,11 +290,12 @@
+@@ -225,11 +293,12 @@
                  {
                      if (block.canDropFromExplosion(this))
                      {
 -                        block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), 1.0F / this.size, 0);
 +                        // CraftBukkit - add yield
 +                        // block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), 1.0F / this.size, 0);
-+                        block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), yield, 0);
++                        MinecraftServer.tasks.add(()-> block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), yield, 0));
                      }
  
 -                    this.world.setBlockState(blockpos, Blocks.AIR.getDefaultState(), 3);
@@ -169,7 +186,7 @@
                  }
              }
          }
-@@ -240,7 +306,12 @@
+@@ -240,7 +309,12 @@
              {
                  if (this.world.getBlockState(blockpos1).getMaterial() == Material.AIR && this.world.getBlockState(blockpos1.down()).isFullBlock() && this.random.nextInt(3) == 0)
                  {
@@ -183,7 +200,7 @@
                  }
              }
          }
-@@ -264,7 +335,8 @@
+@@ -264,7 +338,8 @@
          }
          else
          {
@@ -193,7 +210,7 @@
          }
      }
  
-@@ -277,4 +349,84 @@
+@@ -277,4 +352,84 @@
      {
          return this.affectedBlockPositions;
      }

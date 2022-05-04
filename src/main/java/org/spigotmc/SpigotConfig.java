@@ -30,6 +30,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.skylight.commands.NewPlayerCommand;
 import org.skylight.commands.SkStatusCommand;
+import org.skylight.commands.ThreadsCommand;
 import org.skylight.commands.TimeStopCommand;
 import org.skylight.config.AirLightConfig;
 
@@ -271,6 +272,7 @@ public class SpigotConfig
         commands.put( "tps", new TicksPerSecondCommand( "tps" ) );
         commands.put("timestop",new TimeStopCommand());
         commands.put("skstatus",new SkStatusCommand());
+        commands.put("threads",new ThreadsCommand());
         commands.put("newplayer",new NewPlayerCommand());
     }
 
