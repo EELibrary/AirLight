@@ -170,14 +170,17 @@
              for (BlockPos blockpos : this.affectedBlockPositions)
              {
                  IBlockState iblockstate = this.world.getBlockState(blockpos);
-@@ -225,11 +293,12 @@
+@@ -225,11 +293,15 @@
                  {
                      if (block.canDropFromExplosion(this))
                      {
 -                        block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), 1.0F / this.size, 0);
 +                        // CraftBukkit - add yield
 +                        // block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), 1.0F / this.size, 0);
-+                        MinecraftServer.tasks.add(()-> block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), yield, 0));
++                        try {
++                            block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), yield, 0);
++                        }catch (Exception ignored) {}
++
                      }
  
 -                    this.world.setBlockState(blockpos, Blocks.AIR.getDefaultState(), 3);
@@ -186,7 +189,7 @@
                  }
              }
          }
-@@ -240,7 +309,12 @@
+@@ -240,7 +312,12 @@
              {
                  if (this.world.getBlockState(blockpos1).getMaterial() == Material.AIR && this.world.getBlockState(blockpos1.down()).isFullBlock() && this.random.nextInt(3) == 0)
                  {
@@ -200,7 +203,7 @@
                  }
              }
          }
-@@ -264,7 +338,8 @@
+@@ -264,7 +341,8 @@
          }
          else
          {
@@ -210,7 +213,7 @@
          }
      }
  
-@@ -277,4 +352,84 @@
+@@ -277,4 +355,84 @@
      {
          return this.affectedBlockPositions;
      }
