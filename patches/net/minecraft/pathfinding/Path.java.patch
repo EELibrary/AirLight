@@ -11,7 +11,7 @@
      }
  
      public int getCurrentPathLength()
-@@ -69,11 +71,13 @@
+@@ -69,12 +71,17 @@
          this.currentPathIndex = currentPathIndexIn;
      }
  
@@ -20,17 +20,22 @@
 -        double d0 = (double)this.points[index].x + (double)((int)(entityIn.width + 1.0F)) * 0.5D;
 -        double d1 = (double)this.points[index].y;
 -        double d2 = (double)this.points[index].z + (double)((int)(entityIn.width + 1.0F)) * 0.5D;
+-        return new Vec3d(d0, d1, d2);
 +    public Vec3d getVectorFromIndex(Entity entityIn, int index) {
-+        if (index > points.length) {
-+            return new Vec3d(entityIn.posX, entityIn.posY, entityIn.posZ);
++        synchronized (points) {
++            if (index > points.length) {
++                return new Vec3d(entityIn.posX, entityIn.posY, entityIn.posZ);
++            }
++            double d0 = (double) this.points[index].x + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
++            double d1 = (double) this.points[index].y;
++            double d2 = (double) this.points[index].z + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
++            return new Vec3d(d0, d1, d2);
 +        }
-+        double d0 = (double) this.points[index].x + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
-+        double d1 = (double) this.points[index].y;
-+        double d2 = (double) this.points[index].z + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
-         return new Vec3d(d0, d1, d2);
++
      }
  
-@@ -82,28 +86,22 @@
+     public Vec3d getPosition(Entity entityIn)
+@@ -82,33 +89,29 @@
          return this.getVectorFromIndex(entityIn, this.currentPathIndex);
      }
  
@@ -50,14 +55,11 @@
 -    {
 -        if (pathentityIn == null)
 -        {
-+    public boolean isSamePath(Path pathentityIn) {
-+        if (pathentityIn == null) {
-             return false;
+-            return false;
 -        }
 -        else if (pathentityIn.points.length != this.points.length)
 -        {
-+        } else if (pathentityIn.points.length != this.points.length) {
-             return false;
+-            return false;
 -        }
 -        else
 -        {
@@ -65,9 +67,41 @@
 -            {
 -                if (this.points[i].x != pathentityIn.points[i].x || this.points[i].y != pathentityIn.points[i].y || this.points[i].z != pathentityIn.points[i].z)
 -                {
-+        } else {
-+            for (int i = 0; i < this.points.length; ++i) {
-+                if (this.points[i].x != pathentityIn.points[i].x || this.points[i].y != pathentityIn.points[i].y || this.points[i].z != pathentityIn.points[i].z) {
-                     return false;
+-                    return false;
++    public boolean isSamePath(Path pathentityIn) {
++        synchronized (points) {
++            if (pathentityIn == null) {
++                return false;
++            } else if (pathentityIn.points.length != this.points.length) {
++                return false;
++            } else {
++                for (int i = 0; i < this.points.length; ++i) {
++                    if (this.points[i].x != pathentityIn.points[i].x || this.points[i].y != pathentityIn.points[i].y || this.points[i].z != pathentityIn.points[i].z) {
++                        return false;
++                    }
                  }
-             }
+-            }
+ 
+-            return true;
++                return true;
++            }
+         }
+     }
+ 
+@@ -157,10 +160,12 @@
+         }
+ 
+         Path path = new Path(apathpoint);
+-        path.openSet = apathpoint1;
+-        path.closedSet = apathpoint2;
+-        path.target = pathpoint;
+-        path.currentPathIndex = i;
++        synchronized (path.points) {
++            path.openSet = apathpoint1;
++            path.closedSet = apathpoint2;
++            path.target = pathpoint;
++            path.currentPathIndex = i;
++        }
+         return path;
+     }
+ }

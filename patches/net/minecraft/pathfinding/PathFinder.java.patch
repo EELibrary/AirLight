@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/pathfinding/PathFinder.java
 +++ ../src-work/minecraft/net/minecraft/pathfinding/PathFinder.java
-@@ -1,52 +1,50 @@
+@@ -1,52 +1,49 @@
  package net.minecraft.pathfinding;
  
  import com.google.common.collect.Sets;
@@ -47,7 +47,7 @@
 +    public Path findPath(IBlockAccess worldIn, EntityLiving entitylivingIn, BlockPos targetPos, float maxDistance) {
 +        return this.findPath(worldIn, entitylivingIn, (double) ((float) targetPos.getX() + 0.5F), (double) ((float) targetPos.getY() + 0.5F), (double) ((float) targetPos.getZ() + 0.5F), maxDistance);
      }
- 
+-
      @Nullable
 -    private Path findPath(IBlockAccess worldIn, EntityLiving entitylivingIn, double x, double y, double z, float maxDistance)
 -    {
@@ -72,7 +72,7 @@
          pathFrom.totalPathDistance = 0.0F;
          pathFrom.distanceToNext = pathFrom.distanceManhattan(pathTo);
          pathFrom.distanceToTarget = pathFrom.distanceToNext;
-@@ -55,52 +53,48 @@
+@@ -55,52 +52,48 @@
          this.path.addPoint(pathFrom);
          PathPoint pathpoint = pathFrom;
          int i = 0;
@@ -141,7 +141,7 @@
                          pathpoint2.distanceToTarget = pathpoint2.totalPathDistance + pathpoint2.distanceToNext;
                          this.path.addPoint(pathpoint2);
                      }
-@@ -108,36 +102,26 @@
+@@ -108,36 +101,26 @@
              }
          }
  
