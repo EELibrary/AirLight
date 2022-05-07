@@ -26,7 +26,7 @@
 +    private final Set<Class<?>> knownKeys = Collections.synchronizedSet(Sets.<Class<?>>newIdentityHashSet());
      private final Class<T> baseClass;
 -    private final List<T> values = Lists.<T>newArrayList();
-+    private final List<T> values = new org.skylight.list.IteraingSafelyList();
++    private final List<T> values = new org.jmt.mcmt.paralelised.ConcurrentDoublyLinkedList<>();
  
 -    public ClassInheritanceMultiMap(Class<T> baseClassIn)
 -    {

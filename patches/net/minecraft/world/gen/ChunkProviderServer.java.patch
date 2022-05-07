@@ -90,9 +90,14 @@
              long i = ChunkPos.asLong(x, z);
  
              try
-@@ -126,7 +163,8 @@
+@@ -124,9 +161,12 @@
+                 throw new ReportedException(crashreport);
+             }
  
-             this.id2ChunkMap.put(i, chunk);
+-            this.id2ChunkMap.put(i, chunk);
++            synchronized(this.id2ChunkMap){
++                this.id2ChunkMap.put(i, chunk);
++            }
              chunk.onLoad();
 -            chunk.populate(this, this.chunkGenerator);
 +            chunk.populateCB(this, this.chunkGenerator, true);
@@ -100,7 +105,7 @@
          }
  
          return chunk;
-@@ -218,36 +256,91 @@
+@@ -218,36 +258,91 @@
          this.chunkLoader.flush();
      }
  
