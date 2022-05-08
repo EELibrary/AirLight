@@ -75,9 +75,9 @@ public class ForkJoinTraverse extends AbstractExecutorService {
         this.pool.submit(new ForkJoinTraverseTask<>(list, action, tpt)).join();
     }
 
-    public <T extends Integer> int sum(T[] array, int tpt) {
+    public int sum(Integer[] array, int tpt) {
         AtomicInteger sum = new AtomicInteger(0);
-        Consumer<T> action = sum::getAndAdd;
+        Consumer<Integer> action = sum::getAndAdd;
         blockTraverse(Arrays.asList(array), action, tpt);
         return sum.get();
     }
