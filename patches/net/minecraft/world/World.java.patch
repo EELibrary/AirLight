@@ -871,9 +871,9 @@
      }
  
 +    public static AtomicBoolean timeStopped = new AtomicBoolean(false);
++
      public void updateEntities()
      {
-+
          this.profiler.startSection("entities");
          this.profiler.startSection("global");
 -
@@ -907,7 +907,7 @@
 -            {
 -                this.weatherEffects.remove(i--);
 -            }
-+        for (Entity entity : this.weatherEffects){
++        for(Entity entity:this.weatherEffects){
 +            org.skylight.executor.EntityTicker.onWeatherEffectsTick(entity,this);
          }
 -
@@ -1062,7 +1062,7 @@
          }
 -
 +        tileLimiter.initTick();
-+        for (TileEntity tile : this.loadedTileEntityList){
++        for (TileEntity tile : this.tickableTileEntities){
 +            org.skylight.executor.EntityTicker.onTileTick(tile,this);
 +        }
 +        timings.tileEntityTick.stopTiming(); // Spigot
