@@ -1,5 +1,12 @@
 package org.skylight.executor;
 
+
+import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import net.minecraft.world.World;
@@ -7,21 +14,31 @@ import net.minecraft.entity.Entity;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.ITickable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
-import net.minecraft.tileentity.TileEntity;
-import java.util.concurrent.Phaser;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.block.state.IBlockState;
+
 
 public class EntityTicker {
+    /**
+     * @author Prawa && PabuCommunity
+     * @description This class is used to tick entities in the world. And is VERY important for the server to run.If you edit it please check more than one place in the code.
+     */
     private static final Logger Logger = LogManager.getLogger();
     private static ExecutorService executor;
     private static Phaser phaser;
+    private static AtomicInteger threadId = new AtomicInteger(0);
 
     public static void onPreTick(){
         if (executor == null) {
-            executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*3);
+            ForkJoinPool.ForkJoinWorkerThreadFactory factory = task->{
+                ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(task);
+                thread.setName("Skylight Entity Ticker-" + threadId.getAndIncrement());
+                thread.setDaemon(true);
+                thread.setPriority(8);
+                return thread;
+            };
+            executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*3,factory,null,true);
         }
         phaser = new Phaser();
         phaser.register();

@@ -369,7 +369,7 @@
 -        {
 +    private final ThreadPool executor = new ThreadPool(threads);
 +    public void tick() {
-+        waitForLock();lock();// TTCP
++        waitForLock();lock();
 +        List<EntityPlayerMP> list = Collections.synchronizedList(Lists.newArrayList());
 +        executor.execute(this.entries,entitytrackerentry -> {
              entitytrackerentry.updatePlayerList(this.world.playerEntities);
