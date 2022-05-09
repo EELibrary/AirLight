@@ -29,7 +29,7 @@ public class EntityTicker {
     private static Phaser phaser;
     private static AtomicInteger threadId = new AtomicInteger(0);
 
-    public static void onPreTick(){
+    public static void init(int threads) {
         if (executor == null) {
             ForkJoinPool.ForkJoinWorkerThreadFactory factory = task->{
                 ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(task);
@@ -38,8 +38,11 @@ public class EntityTicker {
                 thread.setPriority(8);
                 return thread;
             };
-            executor = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*3,factory,null,true);
+            executor = new ForkJoinPool(threads,factory,null,true);
         }
+    }
+
+    public static void onPreTick(){
         phaser = new Phaser();
         phaser.register();
     }
@@ -92,6 +95,31 @@ public class EntityTicker {
         });
     }
 
+    public static void onWeatherEffectsTick(net.minecraft.entity.Entity entity,net.minecraft.world.World world){
+        phaser.register();
+        executor.execute(()->{
+            try{
+                if(World.timeStopped.get()){return;}
+                // CraftBukkit start - Fixed an NPE
+                if (entity == null) {
+                    return;
+                }
+                // CraftBukkit end
+                try {
+                    if (entity.updateBlocked) return;
+                    ++entity.ticksExisted;
+                    entity.onUpdate();
+                } catch (Throwable throwable2) {
+                    throwable2.printStackTrace();
+                }
+                if (entity.isDead) {
+                    world.weatherEffects.remove(entity);
+                }
+            }finally{
+                phaser.arriveAndDeregister();
+            }
+        });
+    }
     public static void onTileAdd(TileEntity tileentity1,World world){
         phaser.register();
         executor.execute(()->{

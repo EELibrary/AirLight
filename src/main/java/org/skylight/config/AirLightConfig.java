@@ -3,6 +3,7 @@ package org.skylight.config;
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.skylight.executor.EntityTicker;
 
 import java.io.File;
 import java.util.Map;
@@ -22,28 +23,26 @@ public class AirLightConfig {
                 config.options().copyDefaults(true);
                 config.options().header("The config file of AirLight.Don't edit the debug section!");
                 ConfigurationSection configurationSection = config.createSection("executor");
-                configurationSection.addDefault("entities-thread-count", Runtime.getRuntime().availableProcessors());
-                configurationSection.addDefault("entities-per-thread", 20);
-                configurationSection.addDefault("tile-entities-thread-count", Runtime.getRuntime().availableProcessors());
-                configurationSection.addDefault("weather-effects-thread-count", Runtime.getRuntime().availableProcessors());
+                configurationSection.addDefault("entity-worker-core-size",Runtime.getRuntime().availableProcessors()*3);
                 configurationSection.addDefault("tracker-thread-count", Runtime.getRuntime().availableProcessors());
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.createSection("debug");
-                configurationSection1.addDefault("wait-entities-tick", true);
                 configurationSection1.addDefault("wait-tracker", true);
                 sectionMap.put("debug", configurationSection1);
                 config.load(file);
                 config.save(file);
                 LogManager.getLogger().info("Finish loading!");
                 return;
+            }else{
+                LogManager.getLogger().info("Detected config file.Loading");
+                config.load(file);
+                ConfigurationSection configurationSection = config.getConfigurationSection("executor");
+                sectionMap.put("executor", configurationSection);
+                ConfigurationSection configurationSection1 = config.getConfigurationSection("debug");
+                sectionMap.put("debug", configurationSection1);
+                LogManager.getLogger().info("Finish loading!");
             }
-            LogManager.getLogger().info("Detected config file.Loading");
-            config.load(file);
-            ConfigurationSection configurationSection = config.getConfigurationSection("executor");
-            sectionMap.put("executor", configurationSection);
-            ConfigurationSection configurationSection1 = config.getConfigurationSection("debug");
-            sectionMap.put("debug", configurationSection1);
-            LogManager.getLogger().info("Finish loading!");
+            EntityTicker.init(sectionMap.get("executor").getInt("entity-worker-core-size"));
         }catch (Exception e){
             e.printStackTrace();
         }

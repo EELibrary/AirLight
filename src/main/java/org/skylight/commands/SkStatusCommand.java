@@ -25,9 +25,6 @@ public class SkStatusCommand extends Command {
             sender.sendMessage("  Entities: "+worldserver.loadedEntityList.size()+"\n");
             sender.sendMessage("  Tiles: "+worldserver.loadedTileEntityList.size()+"\n");
             sender.sendMessage("  TileEntities: "+worldserver.loadedTileEntityList.size()+"\n");
-            sender.sendMessage("  Entities-Executor: "+worldserver.entityExecutor.toString()+"\n");
-            sender.sendMessage("  Tile-Executor: "+worldserver.tileExecutor.toString()+"\n");
-            sender.sendMessage("  WeatherEffects-Executor: "+worldserver.weatherExecutor.toString()+"\n");
         }
         return true;
     }
