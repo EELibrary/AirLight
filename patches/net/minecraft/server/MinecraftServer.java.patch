@@ -691,7 +691,7 @@
          }
  
          this.profiler.startSection("tallying");
-@@ -671,46 +869,74 @@
+@@ -671,46 +869,75 @@
  
          this.profiler.endSection();
          this.profiler.endSection();
@@ -751,6 +751,7 @@
 +        catserver.server.command.internal.CommandChunkStats.onServerTick();
 +
 +        Integer[] ids = net.minecraftforge.common.DimensionManager.getIDs(this.tickCounter % 200 == 0);
++        org.skylight.executor.EntityTicker.onPreTick();
 +        for (int x = 0; x < ids.length; x++)
          {
 +            int id = ids[x];
@@ -788,7 +789,7 @@
                  }
                  catch (Throwable throwable1)
                  {
-@@ -721,7 +947,9 @@
+@@ -721,7 +948,9 @@
  
                  try
                  {
@@ -798,7 +799,7 @@
                  }
                  catch (Throwable throwable)
                  {
-@@ -730,28 +958,50 @@
+@@ -730,30 +959,54 @@
                      throw new ReportedException(crashreport1);
                  }
  
@@ -818,6 +819,7 @@
 +            if (worldTickTimes.containsKey(id)) worldTickTimes.get(id)[this.tickCounter % 100] = System.nanoTime() - i; // CatServer - check world in tickTime list, prevent plugin unload world from causing NPE
          }
 -
++        org.skylight.executor.EntityTicker.onTickEnd();
 +        for (Runnable task : tasks){
 +            try{
 +                task.run();
@@ -851,8 +853,11 @@
 +        SpigotTimings.tickablesTimer.stopTiming(); // Spigot
  
          this.profiler.endSection();
++
      }
-@@ -763,8 +1013,11 @@
+ 
+     public boolean getAllowNether()
+@@ -763,8 +1016,11 @@
  
      public void startServerThread()
      {
@@ -865,7 +870,7 @@
      }
  
      public File getFile(String fileName)
-@@ -779,19 +1032,23 @@
+@@ -779,19 +1035,23 @@
  
      public WorldServer getWorld(int dimension)
      {
@@ -896,7 +901,7 @@
      }
  
      public int getCurrentPlayerCount()
-@@ -816,7 +1073,7 @@
+@@ -816,7 +1076,7 @@
  
      public String getServerModName()
      {
@@ -905,7 +910,7 @@
      }
  
      public CrashReport addServerInfoToCrashReport(CrashReport report)
-@@ -845,7 +1102,7 @@
+@@ -845,7 +1105,7 @@
  
      public List<String> getTabCompletions(ICommandSender sender, String input, @Nullable BlockPos pos, boolean hasTargetBlock)
      {
@@ -914,7 +919,7 @@
          boolean flag = input.startsWith("/");
  
          if (flag)
-@@ -862,11 +1119,9 @@
+@@ -862,11 +1122,9 @@
              {
                  if (CommandBase.doesStringStartWith(s2, s1))
                  {
@@ -927,7 +932,7 @@
          }
          else
          {
-@@ -879,22 +1134,24 @@
+@@ -879,22 +1137,24 @@
                  {
                      if (flag1 && !hasTargetBlock)
                      {
@@ -957,7 +962,7 @@
      }
  
      public String getName()
-@@ -904,7 +1161,8 @@
+@@ -904,7 +1164,8 @@
  
      public void sendMessage(ITextComponent component)
      {
@@ -967,7 +972,7 @@
      }
  
      public boolean canUseCommand(int permLevel, String commandName)
-@@ -947,13 +1205,11 @@
+@@ -947,13 +1208,11 @@
          this.folderName = name;
      }
  
@@ -981,7 +986,7 @@
      public String getWorldName()
      {
          return this.worldName;
-@@ -966,7 +1222,7 @@
+@@ -966,7 +1225,7 @@
  
      public void setDifficultyForAllWorlds(EnumDifficulty difficulty)
      {
@@ -990,7 +995,7 @@
          {
              if (worldserver1 != null)
              {
-@@ -1048,9 +1304,9 @@
+@@ -1048,9 +1307,9 @@
          playerSnooper.addClientStat("avg_tick_ms", Integer.valueOf((int)(MathHelper.average(this.tickTimeArray) * 1.0E-6D)));
          int l = 0;
  
@@ -1002,7 +1007,7 @@
              {
                  if (worldserver1 != null)
                  {
-@@ -1088,7 +1344,8 @@
+@@ -1088,7 +1347,8 @@
  
      public boolean isServerInOnlineMode()
      {
@@ -1012,7 +1017,7 @@
      }
  
      public void setOnlineMode(boolean online)
-@@ -1177,12 +1434,12 @@
+@@ -1177,12 +1437,12 @@
  
      public void setPlayerList(PlayerList list)
      {
@@ -1027,7 +1032,7 @@
          {
              worldserver1.getWorldInfo().setGameType(gameMode);
          }
-@@ -1224,7 +1481,7 @@
+@@ -1224,7 +1484,7 @@
  
      public World getEntityWorld()
      {
@@ -1036,7 +1041,7 @@
      }
  
      public boolean isBlockProtected(World worldIn, BlockPos pos, EntityPlayer playerIn)
-@@ -1285,7 +1542,7 @@
+@@ -1285,7 +1545,7 @@
      @Nullable
      public Entity getEntityFromUuid(UUID uuid)
      {
@@ -1045,7 +1050,7 @@
          {
              if (worldserver1 != null)
              {
-@@ -1303,7 +1560,7 @@
+@@ -1303,7 +1563,7 @@
  
      public boolean sendCommandFeedback()
      {
@@ -1054,7 +1059,7 @@
      }
  
      public MinecraftServer getServer()
-@@ -1311,6 +1568,11 @@
+@@ -1311,6 +1571,11 @@
          return this;
      }
  
@@ -1066,7 +1071,7 @@
      public int getMaxWorldSize()
      {
          return 29999984;
-@@ -1320,15 +1582,14 @@
+@@ -1320,15 +1585,14 @@
      {
          Validate.notNull(callable);
  
@@ -1087,7 +1092,7 @@
          }
          else
          {
-@@ -1366,12 +1627,12 @@
+@@ -1366,12 +1630,12 @@
  
      public AdvancementManager getAdvancementManager()
      {
@@ -1102,7 +1107,7 @@
      }
  
      public void reload()
-@@ -1379,7 +1640,7 @@
+@@ -1379,7 +1643,7 @@
          if (this.isCallingFromMinecraftThread())
          {
              this.getPlayerList().saveAllPlayerData();
@@ -1111,7 +1116,7 @@
              this.getAdvancementManager().reload();
              this.getFunctionManager().reload();
              this.getPlayerList().reloadResources();
-@@ -1409,120 +1670,47 @@
+@@ -1409,120 +1673,47 @@
      }
  
      @SideOnly(Side.SERVER)
@@ -1258,7 +1263,7 @@
          }
          catch (Exception exception)
          {
-@@ -1539,7 +1727,8 @@
+@@ -1539,7 +1730,8 @@
      @SideOnly(Side.SERVER)
      public boolean isDebuggingEnabled()
      {
@@ -1268,7 +1273,7 @@
      }
  
      @SideOnly(Side.SERVER)
-@@ -1598,4 +1787,9 @@
+@@ -1598,4 +1790,9 @@
      {
          return this.serverThread;
      }
