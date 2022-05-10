@@ -23,7 +23,7 @@ public class AirLightConfig {
                 config.options().copyDefaults(true);
                 config.options().header("The config file of AirLight.Don't edit the debug section!");
                 ConfigurationSection configurationSection = config.createSection("executor");
-                configurationSection.addDefault("entity-worker-core-size",Runtime.getRuntime().availableProcessors()*3);
+                configurationSection.addDefault("entity-worker-core-size",Runtime.getRuntime().availableProcessors());
                 configurationSection.addDefault("tracker-thread-count", Runtime.getRuntime().availableProcessors());
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.createSection("debug");
@@ -32,7 +32,6 @@ public class AirLightConfig {
                 config.load(file);
                 config.save(file);
                 LogManager.getLogger().info("Finish loading!");
-                return;
             }else{
                 LogManager.getLogger().info("Detected config file.Loading");
                 config.load(file);

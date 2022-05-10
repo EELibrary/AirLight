@@ -1,43 +1,52 @@
 --- ../src-base/minecraft/net/minecraft/pathfinding/Path.java
 +++ ../src-work/minecraft/net/minecraft/pathfinding/Path.java
-@@ -7,8 +7,7 @@
+@@ -7,152 +7,131 @@
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
  
 -public class Path
 -{
++import java.util.concurrent.atomic.AtomicInteger;
++
 +public class Path {
      private final PathPoint[] points;
      private PathPoint[] openSet = new PathPoint[0];
      private PathPoint[] closedSet = new PathPoint[0];
-@@ -17,142 +16,120 @@
-     private int currentPathIndex;
-     private int pathLength;
+     @SideOnly(Side.CLIENT)
+     private PathPoint target;
+-    private int currentPathIndex;
+-    private int pathLength;
++    private final AtomicInteger currentPathIndex = new AtomicInteger(0);
++    private final AtomicInteger pathLength = new AtomicInteger(0);
  
 -    public Path(PathPoint[] pathpoints)
 -    {
 +    public Path(PathPoint[] pathpoints) {
          this.points = pathpoints;
-         this.pathLength = pathpoints.length;
+-        this.pathLength = pathpoints.length;
++        this.pathLength.set(pathpoints.length);
      }
  
 -    public void incrementPathIndex()
 -    {
+-        ++this.currentPathIndex;
 +    public void incrementPathIndex() {
-         ++this.currentPathIndex;
++        this.currentPathIndex.getAndIncrement();
      }
  
 -    public boolean isFinished()
 -    {
+-        return this.currentPathIndex >= this.pathLength;
 +    public boolean isFinished() {
-         return this.currentPathIndex >= this.pathLength;
++        return this.currentPathIndex.get() >= this.pathLength.get();
      }
  
      @Nullable
 -    public PathPoint getFinalPathPoint()
 -    {
+-        return this.pathLength > 0 ? this.points[this.pathLength - 1] : null;
 +    public PathPoint getFinalPathPoint() {
-         return this.pathLength > 0 ? this.points[this.pathLength - 1] : null;
++        return this.pathLength.get() > 0 ? this.points[this.pathLength.get() - 1] : null;
      }
  
 -    public PathPoint getPathPointFromIndex(int index)
@@ -54,26 +63,30 @@
  
 -    public int getCurrentPathLength()
 -    {
+-        return this.pathLength;
 +    public int getCurrentPathLength() {
-         return this.pathLength;
++        return this.pathLength.get();
      }
  
 -    public void setCurrentPathLength(int length)
 -    {
+-        this.pathLength = length;
 +    public void setCurrentPathLength(int length) {
-         this.pathLength = length;
++        this.pathLength.set(length);
      }
  
 -    public int getCurrentPathIndex()
 -    {
+-        return this.currentPathIndex;
 +    public int getCurrentPathIndex() {
-         return this.currentPathIndex;
++        return this.currentPathIndex.get();
      }
  
 -    public void setCurrentPathIndex(int currentPathIndexIn)
 -    {
+-        this.currentPathIndex = currentPathIndexIn;
 +    public void setCurrentPathIndex(int currentPathIndexIn) {
-         this.currentPathIndex = currentPathIndexIn;
++        this.currentPathIndex.set(currentPathIndexIn);
      }
  
 -    public Vec3d getVectorFromIndex(Entity entityIn, int index)
@@ -86,7 +99,7 @@
 +            return new Vec3d(entityIn.posX, entityIn.posY, entityIn.posZ);
 +        }
 +        double d0 = (double) this.points[index].x + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
-+        double d1 = (double) this.points[index].y;
++        double d1 = this.points[index].y;
 +        double d2 = (double) this.points[index].z + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
          return new Vec3d(d0, d1, d2);
 +
@@ -94,8 +107,9 @@
  
 -    public Vec3d getPosition(Entity entityIn)
 -    {
+-        return this.getVectorFromIndex(entityIn, this.currentPathIndex);
 +    public Vec3d getPosition(Entity entityIn) {
-         return this.getVectorFromIndex(entityIn, this.currentPathIndex);
++        return this.getVectorFromIndex(entityIn, this.currentPathIndex.get());
      }
  
 -    public Vec3d getCurrentPos()
@@ -104,8 +118,8 @@
 -        return new Vec3d((double)pathpoint.x, (double)pathpoint.y, (double)pathpoint.z);
 +    public Vec3d getCurrentPos() {
 +        PathPoint pathpoint;
-+        pathpoint = this.points[this.currentPathIndex];
-+        return new Vec3d((double) pathpoint.x, (double) pathpoint.y, (double) pathpoint.z);
++        pathpoint = this.points[this.currentPathIndex.get()];
++        return new Vec3d(pathpoint.x, pathpoint.y, pathpoint.z);
      }
  
 -    public boolean isSamePath(Path pathentityIn)
@@ -190,3 +204,12 @@
              apathpoint2[l] = PathPoint.createFromBuffer(buf);
          }
  
+@@ -160,7 +139,7 @@
+         path.openSet = apathpoint1;
+         path.closedSet = apathpoint2;
+         path.target = pathpoint;
+-        path.currentPathIndex = i;
++        path.currentPathIndex.set(i);
+         return path;
+     }
+ }
