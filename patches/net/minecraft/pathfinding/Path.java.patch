@@ -1,15 +1,17 @@
 --- ../src-base/minecraft/net/minecraft/pathfinding/Path.java
 +++ ../src-work/minecraft/net/minecraft/pathfinding/Path.java
-@@ -7,152 +7,131 @@
+@@ -7,152 +7,132 @@
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
  
 -public class Path
 -{
+-    private final PathPoint[] points;
 +import java.util.concurrent.atomic.AtomicInteger;
++import java.util.concurrent.atomic.AtomicReferenceArray;
 +
 +public class Path {
-     private final PathPoint[] points;
++    private final AtomicReferenceArray<PathPoint> points;
      private PathPoint[] openSet = new PathPoint[0];
      private PathPoint[] closedSet = new PathPoint[0];
      @SideOnly(Side.CLIENT)
@@ -21,9 +23,10 @@
  
 -    public Path(PathPoint[] pathpoints)
 -    {
-+    public Path(PathPoint[] pathpoints) {
-         this.points = pathpoints;
+-        this.points = pathpoints;
 -        this.pathLength = pathpoints.length;
++    public Path(PathPoint[] pathpoints) {
++        this.points = new AtomicReferenceArray<>(pathpoints);
 +        this.pathLength.set(pathpoints.length);
      }
  
@@ -46,19 +49,21 @@
 -    {
 -        return this.pathLength > 0 ? this.points[this.pathLength - 1] : null;
 +    public PathPoint getFinalPathPoint() {
-+        return this.pathLength.get() > 0 ? this.points[this.pathLength.get() - 1] : null;
++        return this.pathLength.get() > 0 ? this.points.get(this.pathLength.get() - 1) : null;
      }
  
 -    public PathPoint getPathPointFromIndex(int index)
 -    {
+-        return this.points[index];
 +    public PathPoint getPathPointFromIndex(int index) {
-         return this.points[index];
++        return this.points.get(index);
      }
  
 -    public void setPoint(int index, PathPoint point)
 -    {
+-        this.points[index] = point;
 +    public void setPoint(int index, PathPoint point) {
-         this.points[index] = point;
++        this.points.set(index, point);
      }
  
 -    public int getCurrentPathLength()
@@ -95,12 +100,12 @@
 -        double d1 = (double)this.points[index].y;
 -        double d2 = (double)this.points[index].z + (double)((int)(entityIn.width + 1.0F)) * 0.5D;
 +    public Vec3d getVectorFromIndex(Entity entityIn, int index) {
-+        if (index > points.length) {
++        if (index > points.length()) {
 +            return new Vec3d(entityIn.posX, entityIn.posY, entityIn.posZ);
 +        }
-+        double d0 = (double) this.points[index].x + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
-+        double d1 = this.points[index].y;
-+        double d2 = (double) this.points[index].z + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
++        double d0 = (double) this.points.get(index).x + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
++        double d1 = this.points.get(index).y;
++        double d2 = (double) this.points.get(index).z + (double) ((int) (entityIn.width + 1.0F)) * 0.5D;
          return new Vec3d(d0, d1, d2);
 +
      }
@@ -118,7 +123,7 @@
 -        return new Vec3d((double)pathpoint.x, (double)pathpoint.y, (double)pathpoint.z);
 +    public Vec3d getCurrentPos() {
 +        PathPoint pathpoint;
-+        pathpoint = this.points[this.currentPathIndex.get()];
++        pathpoint = this.points.get(this.currentPathIndex.get());
 +        return new Vec3d(pathpoint.x, pathpoint.y, pathpoint.z);
      }
  
@@ -132,7 +137,7 @@
 -        }
 -        else if (pathentityIn.points.length != this.points.length)
 -        {
-+        } else if (pathentityIn.points.length != this.points.length) {
++        } else if (pathentityIn.points.length() != this.points.length()) {
              return false;
 -        }
 -        else
@@ -142,8 +147,8 @@
 -                if (this.points[i].x != pathentityIn.points[i].x || this.points[i].y != pathentityIn.points[i].y || this.points[i].z != pathentityIn.points[i].z)
 -                {
 +        } else {
-+            for (int i = 0; i < this.points.length; ++i) {
-+                if (this.points[i].x != pathentityIn.points[i].x || this.points[i].y != pathentityIn.points[i].y || this.points[i].z != pathentityIn.points[i].z) {
++            for (int i = 0; i < this.points.length(); ++i) {
++                if (this.points.get(i).x != pathentityIn.points.get(i).x || this.points.get(i).y != pathentityIn.points.get(i).y || this.points.get(i).z != pathentityIn.points.get(i).z) {
                      return false;
                  }
              }
@@ -204,7 +209,7 @@
              apathpoint2[l] = PathPoint.createFromBuffer(buf);
          }
  
-@@ -160,7 +139,7 @@
+@@ -160,7 +140,7 @@
          path.openSet = apathpoint1;
          path.closedSet = apathpoint2;
          path.target = pathpoint;

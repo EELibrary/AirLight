@@ -74,13 +74,12 @@ public class ASMEventHandler implements IEventListener
             }
         }
     }
-    private final Object mutex = new Object();
 
     @SuppressWarnings("rawtypes")
     @Override
     public void invoke(Event event)
     {
-        synchronized (mutex) {
+        synchronized (this) {
             if (GETCONTEXT)
                 ThreadContext.put("mod", owner == null ? "" : owner.getName());
             if (handler != null) {
@@ -102,19 +101,20 @@ public class ASMEventHandler implements IEventListener
 
     public Class<?> createWrapper(Method callback)
     {
-        if (cache.containsKey(callback))
-        {
-            return cache.get(callback);
-        }
+        synchronized (this){
+            if (cache.containsKey(callback))
+            {
+                return cache.get(callback);
+            }
 
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
+            ClassWriter cw = new ClassWriter(0);
+            MethodVisitor mv;
 
-        boolean isStatic = Modifier.isStatic(callback.getModifiers());
-        String name = getUniqueName(callback);
-        String desc = name.replace('.',  '/');
-        String instType = Type.getInternalName(callback.getDeclaringClass());
-        String eventType = Type.getInternalName(callback.getParameterTypes()[0]);
+            boolean isStatic = Modifier.isStatic(callback.getModifiers());
+            String name = getUniqueName(callback);
+            String desc = name.replace('.',  '/');
+            String instType = Type.getInternalName(callback.getDeclaringClass());
+            String eventType = Type.getInternalName(callback.getParameterTypes()[0]);
 
         /*
         System.out.println("Name:     " + name);
@@ -124,48 +124,49 @@ public class ASMEventHandler implements IEventListener
         System.out.println("Event:    " + eventType);
         */
 
-        cw.visit(getClassVersion(), ACC_PUBLIC | ACC_SUPER, desc, null, "java/lang/Object", new String[]{ HANDLER_DESC }); // CatServer
+            cw.visit(getClassVersion(), ACC_PUBLIC | ACC_SUPER, desc, null, "java/lang/Object", new String[]{ HANDLER_DESC }); // CatServer
 
-        cw.visitSource(".dynamic", null);
-        {
-            if (!isStatic)
-                cw.visitField(ACC_PUBLIC, "instance", "Ljava/lang/Object;", null, null).visitEnd();
-        }
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "<init>", isStatic ? "()V" : "(Ljava/lang/Object;)V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            if (!isStatic)
+            cw.visitSource(".dynamic", null);
             {
+                if (!isStatic)
+                    cw.visitField(ACC_PUBLIC, "instance", "Ljava/lang/Object;", null, null).visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", isStatic ? "()V" : "(Ljava/lang/Object;)V", null, null);
+                mv.visitCode();
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitFieldInsn(PUTFIELD, desc, "instance", "Ljava/lang/Object;");
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                if (!isStatic)
+                {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitVarInsn(ALOAD, 1);
+                    mv.visitFieldInsn(PUTFIELD, desc, "instance", "Ljava/lang/Object;");
+                }
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 2);
+                mv.visitEnd();
             }
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(2, 2);
-            mv.visitEnd();
-        }
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "invoke", HANDLER_FUNC_DESC, null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            if (!isStatic)
             {
-                mv.visitFieldInsn(GETFIELD, desc, "instance", "Ljava/lang/Object;");
-                mv.visitTypeInsn(CHECKCAST, instType);
+                mv = cw.visitMethod(ACC_PUBLIC, "invoke", HANDLER_FUNC_DESC, null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                if (!isStatic)
+                {
+                    mv.visitFieldInsn(GETFIELD, desc, "instance", "Ljava/lang/Object;");
+                    mv.visitTypeInsn(CHECKCAST, instType);
+                }
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitTypeInsn(CHECKCAST, eventType);
+                mv.visitMethodInsn(isStatic ? INVOKESTATIC : INVOKEVIRTUAL, instType, callback.getName(), Type.getMethodDescriptor(callback), isInterface(instType)); // CatServer
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 2);
+                mv.visitEnd();
             }
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, eventType);
-            mv.visitMethodInsn(isStatic ? INVOKESTATIC : INVOKEVIRTUAL, instType, callback.getName(), Type.getMethodDescriptor(callback), isInterface(instType)); // CatServer
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(2, 2);
-            mv.visitEnd();
+            cw.visitEnd();
+            Class<?> ret = LOADER.define(name, cw.toByteArray());
+            cache.put(callback, ret);
+            return ret;
         }
-        cw.visitEnd();
-        Class<?> ret = LOADER.define(name, cw.toByteArray());
-        cache.put(callback, ret);
-        return ret;
     }
 
     private String getUniqueName(Method callback)
