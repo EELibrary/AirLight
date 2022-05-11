@@ -35,7 +35,7 @@ public enum EventPriority implements IEventListener
 ;
 
     @Override
-    public void invoke(Event event)
+    public synchronized void invoke(Event event)
     {
         event.setPhase(this);
     }

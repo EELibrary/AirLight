@@ -66,60 +66,58 @@ public class EventBus implements IEventExceptionHandler
 
     public void register(Object target)
     {
-        synchronized (this){
-            if (listeners.containsKey(target))
-            {
-                return;
-            }
+        if (listeners.containsKey(target))
+        {
+            return;
+        }
 
-            ModContainer activeModContainer = Loader.instance().activeModContainer();
-            if (activeModContainer == null)
-            {
-                FMLLog.log.error("Unable to determine registrant mod for {}. This is a critical error and should be impossible", target, new Throwable());
-                activeModContainer = Loader.instance().getMinecraftModContainer();
-            }
-            listenerOwners.put(target, activeModContainer);
-            boolean isStatic = target.getClass() == Class.class;
-            @SuppressWarnings("unchecked")
-            Set<? extends Class<?>> supers = isStatic ? Sets.newHashSet((Class<?>)target) : TypeToken.of(target.getClass()).getTypes().rawTypes();
-            for (Method method : (isStatic ? (Class<?>)target : target.getClass()).getMethods())
-            {
-                if (isStatic && !Modifier.isStatic(method.getModifiers()))
-                    continue;
-                else if (!isStatic && Modifier.isStatic(method.getModifiers()))
-                    continue;
+        ModContainer activeModContainer = Loader.instance().activeModContainer();
+        if (activeModContainer == null)
+        {
+            FMLLog.log.error("Unable to determine registrant mod for {}. This is a critical error and should be impossible", target, new Throwable());
+            activeModContainer = Loader.instance().getMinecraftModContainer();
+        }
+        listenerOwners.put(target, activeModContainer);
+        boolean isStatic = target.getClass() == Class.class;
+        @SuppressWarnings("unchecked")
+        Set<? extends Class<?>> supers = isStatic ? Sets.newHashSet((Class<?>)target) : TypeToken.of(target.getClass()).getTypes().rawTypes();
+        for (Method method : (isStatic ? (Class<?>)target : target.getClass()).getMethods())
+        {
+            if (isStatic && !Modifier.isStatic(method.getModifiers()))
+                continue;
+            else if (!isStatic && Modifier.isStatic(method.getModifiers()))
+                continue;
 
-                for (Class<?> cls : supers)
+            for (Class<?> cls : supers)
+            {
+                try
                 {
-                    try
+                    Method real = cls.getDeclaredMethod(method.getName(), method.getParameterTypes());
+                    if (real.isAnnotationPresent(SubscribeEvent.class))
                     {
-                        Method real = cls.getDeclaredMethod(method.getName(), method.getParameterTypes());
-                        if (real.isAnnotationPresent(SubscribeEvent.class))
+                        Class<?>[] parameterTypes = method.getParameterTypes();
+                        if (parameterTypes.length != 1)
                         {
-                            Class<?>[] parameterTypes = method.getParameterTypes();
-                            if (parameterTypes.length != 1)
-                            {
-                                throw new IllegalArgumentException(
-                                        "Method " + method + " has @SubscribeEvent annotation, but requires " + parameterTypes.length +
-                                                " arguments.  Event handler methods must require a single argument."
-                                );
-                            }
-
-                            Class<?> eventType = parameterTypes[0];
-
-                            if (!Event.class.isAssignableFrom(eventType))
-                            {
-                                throw new IllegalArgumentException("Method " + method + " has @SubscribeEvent annotation, but takes a argument that is not an Event " + eventType);
-                            }
-
-                            register(eventType, target, real, activeModContainer);
-                            break;
+                            throw new IllegalArgumentException(
+                                "Method " + method + " has @SubscribeEvent annotation, but requires " + parameterTypes.length +
+                                " arguments.  Event handler methods must require a single argument."
+                            );
                         }
+
+                        Class<?> eventType = parameterTypes[0];
+
+                        if (!Event.class.isAssignableFrom(eventType))
+                        {
+                            throw new IllegalArgumentException("Method " + method + " has @SubscribeEvent annotation, but takes a argument that is not an Event " + eventType);
+                        }
+
+                        register(eventType, target, real, activeModContainer);
+                        break;
                     }
-                    catch (NoSuchMethodException e)
-                    {
-                        ; // Eat the error, this is not unexpected
-                    }
+                }
+                catch (NoSuchMethodException e)
+                {
+                    ; // Eat the error, this is not unexpected
                 }
             }
         }
@@ -127,83 +125,78 @@ public class EventBus implements IEventExceptionHandler
 
     private void register(Class<?> eventType, Object target, Method method, final ModContainer owner)
     {
-        synchronized (this){
-            try
-            {
-                Constructor<?> ctr = eventType.getConstructor();
-                ctr.setAccessible(true);
-                Event event = (Event)ctr.newInstance();
-                final ASMEventHandler asm = new ASMEventHandler(target, method, owner, IGenericEvent.class.isAssignableFrom(eventType));
+        try
+        {
+            Constructor<?> ctr = eventType.getConstructor();
+            ctr.setAccessible(true);
+            Event event = (Event)ctr.newInstance();
+            final ASMEventHandler asm = new ASMEventHandler(target, method, owner, IGenericEvent.class.isAssignableFrom(eventType));
 
-                IEventListener listener = asm;
-                if (IContextSetter.class.isAssignableFrom(eventType))
+            IEventListener listener = asm;
+            if (IContextSetter.class.isAssignableFrom(eventType))
+            {
+                listener = new IEventListener()
                 {
-                    listener = new IEventListener()
+                    @Override
+                    public void invoke(Event event)
                     {
-                        @Override
-                        public void invoke(Event event)
-                        {
-                            ModContainer old = Loader.instance().activeModContainer();
-                            Loader.instance().setActiveModContainer(owner);
-                            ((IContextSetter)event).setModContainer(owner);
-                            asm.invoke(event);
-                            Loader.instance().setActiveModContainer(old);
-                        }
-                    };
-                }
-
-                event.getListenerList().register(busID, asm.getPriority(), listener);
-
-                ArrayList<IEventListener> others = listeners.computeIfAbsent(target, k -> new ArrayList<>());
-                others.add(listener);
+                        ModContainer old = Loader.instance().activeModContainer();
+                        Loader.instance().setActiveModContainer(owner);
+                        ((IContextSetter)event).setModContainer(owner);
+                        asm.invoke(event);
+                        Loader.instance().setActiveModContainer(old);
+                    }
+                };
             }
-            catch (Exception e)
-            {
-                FMLLog.log.error("Error registering event handler: {} {} {}", owner, eventType, method, e);
-            }
+
+            event.getListenerList().register(busID, asm.getPriority(), listener);
+
+            ArrayList<IEventListener> others = listeners.computeIfAbsent(target, k -> new ArrayList<>());
+            others.add(listener);
+        }
+        catch (Exception e)
+        {
+            FMLLog.log.error("Error registering event handler: {} {} {}", owner, eventType, method, e);
         }
     }
 
-    public void unregister(Object object) {
-        synchronized (this) {
-            ArrayList<IEventListener> list = listeners.remove(object);
-            if (list == null)
-                return;
-            for (IEventListener listener : list) {
-                ListenerList.unregisterAll(busID, listener);
-            }
-
+    public void unregister(Object object)
+    {
+        ArrayList<IEventListener> list = listeners.remove(object);
+        if(list == null)
+            return;
+        for (IEventListener listener : list)
+        {
+            ListenerList.unregisterAll(busID, listener);
         }
     }
 
     public boolean post(Event event)
     {
-        synchronized (this){
-            if (shutdown) return false;
+        if (shutdown) return false;
 
-            // CatServer start - CatAPI implement
-            if (Bukkit.getServer() != null && ForgeEvent.getHandlerList().getRegisteredListeners().length > 0) {
-                Bukkit.getPluginManager().callEvent(new ForgeEvent(event));
-            }
-            // CatServer end
-
-            IEventListener[] listeners = event.getListenerList().getListeners(busID);
-            int index = 0;
-            try
-            {
-                for (; index < listeners.length; index++)
-                {
-                    listeners[index].invoke(event);
-                }
-            }
-            catch (Throwable throwable)
-            {
-                exceptionHandler.handleException(this, event, listeners, index, throwable);
-                Throwables.throwIfUnchecked(throwable);
-                throw new RuntimeException(throwable);
-            }
-            return event.isCancelable() && event.isCanceled();
+        // CatServer start - CatAPI implement
+        if (Bukkit.getServer() != null && ForgeEvent.getHandlerList().getRegisteredListeners().length > 0) {
+            Bukkit.getPluginManager().callEvent(new ForgeEvent(event));
         }
+        // CatServer end
+
+        IEventListener[] listeners = event.getListenerList().getListeners(busID);
+        int index = 0;
+        try
+        {
+            for (; index < listeners.length; index++)
+            {
+                listeners[index].invoke(event);
+            }
+        }
+        catch (Throwable throwable)
+        {
+            exceptionHandler.handleException(this, event, listeners, index, throwable);
+            Throwables.throwIfUnchecked(throwable);
+            throw new RuntimeException(throwable);
+        }
+        return event.isCancelable() && event.isCanceled();
     }
 
     public void shutdown()

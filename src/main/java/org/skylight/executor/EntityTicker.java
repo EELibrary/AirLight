@@ -34,7 +34,7 @@ public class EntityTicker {
         if (executor == null) {
             ForkJoinPool.ForkJoinWorkerThreadFactory factory = task->{
                 ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(task);
-                thread.setName("Skylight Entity Ticker-" + threadId.getAndIncrement());
+                thread.setName("Skylight TileEntity Ticker-" + threadId.getAndIncrement());
                 thread.setDaemon(true);
                 thread.setPriority(8);
                 return thread;
