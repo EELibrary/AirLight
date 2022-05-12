@@ -949,7 +949,7 @@
      }
  
      public File getFile(String fileName)
-@@ -779,19 +1063,23 @@
+@@ -779,16 +1063,20 @@
  
      public WorldServer getWorld(int dimension)
      {
@@ -975,11 +975,7 @@
 +
      public String getMinecraftVersion()
      {
--        return "1.12.2";
-+        return "AL1.12.2";
-     }
- 
-     public int getCurrentPlayerCount()
+         return "1.12.2";
 @@ -816,7 +1104,7 @@
  
      public String getServerModName()
