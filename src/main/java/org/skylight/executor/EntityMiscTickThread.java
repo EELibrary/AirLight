@@ -19,7 +19,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.block.state.IBlockState;
 
 
-public class EntityTicker {
+public class EntityMiscTickThread {
     /**
      * @author Prawa && PabuCommunity
      * @description This class is used to tick entities in the world. And is VERY important for the server to run.If you edit it please check more than one place in the code.
@@ -30,11 +30,11 @@ public class EntityTicker {
     private static AtomicInteger threadId = new AtomicInteger(0);
 
     public static void init(int threads) {
-        EntityTickOverride.init(threads);
+        EntityMainTickThread.init(threads);
         if (executor == null) {
             ForkJoinPool.ForkJoinWorkerThreadFactory factory = task->{
                 ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(task);
-                thread.setName("Skylight TileEntity Ticker-" + threadId.getAndIncrement());
+                thread.setName("Skylight Entity Misc Ticker-" + threadId.getAndIncrement());
                 thread.setDaemon(true);
                 thread.setPriority(8);
                 return thread;

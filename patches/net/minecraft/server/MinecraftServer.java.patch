@@ -821,7 +821,7 @@
  
 -                this.profiler.startSection("tick");
 +        Integer[] ids = net.minecraftforge.common.DimensionManager.getIDs(this.tickCounter % 200 == 0);
-+        org.skylight.executor.EntityTicker.onPreTick();
++        org.skylight.executor.EntityMiscTickThread.onPreTick();
 +        for (int id : ids) {
 +            long i = System.nanoTime();
  
@@ -896,7 +896,7 @@
 +            if (worldTickTimes.containsKey(id))
 +                worldTickTimes.get(id)[this.tickCounter % 100] = System.nanoTime() - i; // CatServer - check world in tickTime list, prevent plugin unload world from causing NPE
 +        }
-+        org.skylight.executor.EntityTicker.onTickEnd();
++        org.skylight.executor.EntityMiscTickThread.onTickEnd();
 +        for (Runnable task : tasks){
 +            try{
 +                task.run();

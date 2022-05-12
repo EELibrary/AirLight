@@ -3,7 +3,7 @@ package org.skylight.config;
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.skylight.executor.EntityTicker;
+import org.skylight.executor.EntityMiscTickThread;
 
 import java.io.File;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class AirLightConfig {
                 sectionMap.put("debug", configurationSection1);
                 LogManager.getLogger().info("Finish loading!");
             }
-            EntityTicker.init(sectionMap.get("executor").getInt("entity-worker-core-size"));
+            EntityMiscTickThread.init(sectionMap.get("executor").getInt("entity-worker-core-size"));
         }catch (Exception e){
             e.printStackTrace();
         }

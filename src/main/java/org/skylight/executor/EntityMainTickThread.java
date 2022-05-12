@@ -13,16 +13,16 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
 
-public class EntityTickOverride {
+public class EntityMainTickThread {
     private static ForkJoinPool pool;
     private static AtomicInteger active = new AtomicInteger(0);
     public static void tickEntities(List<Entity> entities){
         List<Entity> list = new ArrayList<>(entities);
-        pool.execute(new TickTask<Entity>(list, EntityTickOverride::tickEntity));
+        pool.execute(new TickTask<Entity>(list, EntityMainTickThread::tickEntity));
     }
     public static void tickTiles(List<TileEntity> entities){
         List<TileEntity> list = new ArrayList<>(entities);
-        pool.execute(new TickTask<TileEntity>(list, EntityTickOverride::onTileTick));
+        pool.execute(new TickTask<TileEntity>(list, EntityMainTickThread::onTileTick));
     }
     private static AtomicInteger threadId = new AtomicInteger(0);
 
@@ -39,7 +39,7 @@ public class EntityTickOverride {
     public static void init(int threads){
         ForkJoinPool.ForkJoinWorkerThreadFactory factory = task->{
             ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(task);
-            thread.setName("Skylight Entity Ticker-" + threadId.getAndIncrement());
+            thread.setName("Skylight Entity Main Ticker-" + threadId.getAndIncrement());
             thread.setDaemon(true);
             thread.setPriority(8);
             return thread;
