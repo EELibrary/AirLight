@@ -360,6 +360,7 @@
 +        CatServer.onServerStart();
      }
  
+-    public void initialWorldChunkLoad()
 +    private void prepareChunks(WorldServer world, int index) {
 +        MinecraftServer.LOGGER.info("Preparing start region for level " + index + " (Seed: " + world.getSeed() + ")");
 +        BlockPos spawnPos = world.getSpawnPoint();
@@ -400,7 +401,7 @@
 +            LOGGER.error("Interrupted while preparing spawn area", e);
 +        }
 +    }
-     public void initialWorldChunkLoad()
++    /*public void initialWorldChunkLoad()
      {
 -        int i = 16;
 -        int j = 4;
@@ -419,7 +420,7 @@
          for (int l1 = -192; l1 <= 192 && this.isServerRunning(); l1 += 16)
          {
              for (int i2 = -192; i2 <= 192 && this.isServerRunning(); i2 += 16)
-@@ -330,6 +444,10 @@
+@@ -330,8 +444,12 @@
              }
          }
  
@@ -428,8 +429,11 @@
 +        }
 +
          this.clearCurrentTask();
-     }
+-    }
++    }*/
  
+     public void setResourcePackFromWorld(String worldNameIn, ISaveHandler saveHandlerIn)
+     {
 @@ -379,7 +497,7 @@
  
      public void saveAllWorlds(boolean isSilent)
