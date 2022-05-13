@@ -6,18 +6,28 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.storage.AnvilChunkLoader;
 import net.minecraft.world.gen.ChunkProviderServer;
 import org.bukkit.craftbukkit.util.Waitable;
+import org.skylight.executor.ThreadManager;
 
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 public class AsyncCatcher {
     public static boolean isMainThread() {
-        return true;
+        return !ThreadManager.is_off_main_thread();
     }
 
     public static boolean checkAsync(String reason) {
+        if (!isMainThread()) {
+            if (!CatServer.getConfig().disableAsyncCatchWarn) {
+                CatServer.log.warn("A Mod/Plugin try to async " + reason + ", it will be executed safely on the main server thread until return!");
+                CatServer.log.warn("Please check the stacktrace in debug.log and report the author.");
+            }
+            CatServer.log.debug("Try to async " + reason, new Throwable());
+            return true;
+        }
         return false;
     }
+
 
     public static void ensureExecuteOnPrimaryThread(Runnable runnable) {
         ensureExecuteOnPrimaryThread(() -> { runnable.run(); return null; });

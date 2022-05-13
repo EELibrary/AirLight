@@ -51,6 +51,7 @@ public class EntityMiscTickThread {
     public static void onWeatherEffectsTick(net.minecraft.entity.Entity entity,net.minecraft.world.World world){
         phaser.register();
         executor.execute(()->{
+            ThreadManager.server_workers.add(Thread.currentThread());
             try{
                 if(World.timeStopped.get()){return;}
                 // CraftBukkit start - Fixed an NPE
@@ -69,6 +70,7 @@ public class EntityMiscTickThread {
                     world.weatherEffects.remove(entity);
                 }
             }finally{
+                ThreadManager.server_workers.remove(Thread.currentThread());
                 phaser.arriveAndDeregister();
             }
         });
@@ -77,6 +79,7 @@ public class EntityMiscTickThread {
     public static void onTileAdd(TileEntity tileentity1,World world){
         phaser.register();
         executor.execute(()->{
+            ThreadManager.server_workers.add(Thread.currentThread());
             try{
                 if(World.timeStopped.get()){
                     return;
@@ -97,6 +100,7 @@ public class EntityMiscTickThread {
                     }
                 }
             }finally{
+                ThreadManager.server_workers.remove(Thread.currentThread());
                 phaser.arriveAndDeregister();
             }
         });

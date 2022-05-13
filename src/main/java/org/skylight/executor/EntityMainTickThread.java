@@ -71,6 +71,7 @@ public class EntityMainTickThread {
         @Override
         protected void compute() {
             active.incrementAndGet();
+            ThreadManager.server_workers.add(Thread.currentThread());
             try{
                 if (end - start < THRESHOLD) {
                     for (int i = start; i < end; i++) {
@@ -83,6 +84,7 @@ public class EntityMainTickThread {
             }catch (Exception e){
                 e.printStackTrace();
             }finally {
+                ThreadManager.server_workers.remove(Thread.currentThread());
                 active.decrementAndGet();
             }
         }
