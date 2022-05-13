@@ -34,7 +34,7 @@ public class EntityMiscTickThread {
         if (executor == null) {
             ForkJoinPool.ForkJoinWorkerThreadFactory factory = task->{
                 ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(task);
-                thread.setName("Skylight Entity Misc Ticker-" + threadId.getAndIncrement());
+                thread.setName("Skylight Parallel Entity Misc Ticker-" + threadId.getAndIncrement());
                 thread.setDaemon(true);
                 thread.setPriority(8);
                 return thread;

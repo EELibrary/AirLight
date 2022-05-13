@@ -20,4 +20,21 @@ public class ThreadManager {
         }
         return false;
     }
+    @Deprecated
+    public static void addAsyncCatcherWhiteList(Thread thread){
+        thread_whitelist.add(thread);
+    }
+    @Deprecated
+    public static void addAsyncCatcherWhiteList(){
+        thread_whitelist.add(Thread.currentThread());
+    }
+    @Deprecated
+    public static void removeAsyncCatcherWhiteList(Thread thread){
+        thread_whitelist.remove(thread);
+    }
+
+    @Deprecated
+    public static void removeAsyncCatcherWhiteList(){
+        thread_whitelist.remove(Thread.currentThread());
+    }
 }

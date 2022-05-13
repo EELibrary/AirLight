@@ -17,7 +17,6 @@ import java.util.Map;
 import org.bukkit.craftbukkit.scheduler.CraftTask;
 
 public class SpigotTimings {
-
     public static final CustomTimingsHandler serverTickTimer = new CustomTimingsHandler("** Full Server Tick");
     public static final CustomTimingsHandler playerListTimer = new CustomTimingsHandler("Player List");
     public static final CustomTimingsHandler commandFunctionsTimer = new CustomTimingsHandler("Command Functions");

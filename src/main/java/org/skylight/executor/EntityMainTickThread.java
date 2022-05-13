@@ -39,7 +39,7 @@ public class EntityMainTickThread {
     public static void init(int threads){
         ForkJoinPool.ForkJoinWorkerThreadFactory factory = task->{
             ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(task);
-            thread.setName("Skylight Entity Main Ticker-" + threadId.getAndIncrement());
+            thread.setName("Skylight Parallel Entity Main Ticker-" + threadId.getAndIncrement());
             thread.setDaemon(true);
             thread.setPriority(8);
             return thread;
