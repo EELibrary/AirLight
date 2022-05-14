@@ -36,7 +36,7 @@ public class TicksPerSecondCommand extends Command
 
         sender.sendMessage( ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "));
         // Paper end
-
+        sender.sendMessage(ChatColor.GOLD + "Memory Useage: " +ChatColor.GREEN+ ( ( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() ) / 1024 / 1024 ) + "MB/" + ( Runtime.getRuntime().maxMemory() / 1024 / 1024 ) + "MB");
         return true;
     }
 
