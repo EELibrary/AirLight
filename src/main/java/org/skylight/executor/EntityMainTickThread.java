@@ -46,9 +46,8 @@ public class EntityMainTickThread {
         };
         pool = new ForkJoinPool(threads,factory,null,true);
     }
-
+    public static int THRESHOLD = 50;
     public static class TickTask<E> extends RecursiveAction {
-        private static final int THRESHOLD = 3000;
         private final List<E> list;
         private final int start;
         private final int end;
