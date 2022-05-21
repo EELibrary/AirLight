@@ -20,6 +20,7 @@ public class ThreadManager {
         }
         return false;
     }
+    public static boolean started = false;
     @Deprecated
     public static void addAsyncCatcherWhiteList(Thread thread){
         thread_whitelist.add(thread);

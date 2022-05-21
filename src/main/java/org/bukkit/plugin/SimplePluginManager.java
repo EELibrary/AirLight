@@ -468,6 +468,8 @@ public final class SimplePluginManager implements PluginManager {
         }
     }
 
+    private final Object mutex = new Object();
+
     /**
      * Calls an event with the given details.
      * <p>
@@ -476,17 +478,21 @@ public final class SimplePluginManager implements PluginManager {
      * @param event Event details
      */
     public void callEvent(Event event) {
-        if(ThreadManager.is_off_main_thread() && AirLightConfig.sectionMap.get("executor").getBoolean("force-bukkit-event-on-main-thread")) {
-            ThreadManager.postToMainThread(()->{
-                if (CatServer.getConfig().fakePlayerEventPass && event instanceof PlayerEvent && ((PlayerEvent) event).getPlayer() instanceof CraftFakePlayer)
-                    return; // CatServer
-                fireEvent(event);
-            });
-            return;
+        if (ThreadManager.started) {
+            if (ThreadManager.is_off_main_thread() && AirLightConfig.sectionMap.get("executor").getBoolean("force-bukkit-event-on-main-thread")) {
+                ThreadManager.postToMainThread(() -> {
+                    if (CatServer.getConfig().fakePlayerEventPass && event instanceof PlayerEvent && ((PlayerEvent) event).getPlayer() instanceof CraftFakePlayer)
+                        return; // CatServer
+                    fireEvent(event);
+                });
+                return;
+            }
         }
-        if (CatServer.getConfig().fakePlayerEventPass && event instanceof PlayerEvent && ((PlayerEvent) event).getPlayer() instanceof CraftFakePlayer)
-            return; // CatServer
-        fireEvent(event);
+        synchronized (mutex) {
+            if (CatServer.getConfig().fakePlayerEventPass && event instanceof PlayerEvent && ((PlayerEvent) event).getPlayer() instanceof CraftFakePlayer)
+                return; // CatServer
+            fireEvent(event);
+        }
     }
 
     private void fireEvent(Event event) {

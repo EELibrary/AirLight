@@ -84,22 +84,24 @@ public class ASMEventHandler implements IEventListener
     @SuppressWarnings("rawtypes")
     @Override
     public void invoke(Event event) {
-        if (ThreadManager.is_off_main_thread() && AirLightConfig.sectionMap.get("executor").getBoolean("force-forge-event-on-main-thread")) {
-            ThreadManager.postToMainThread(() -> {
-                if (GETCONTEXT)
-                    ThreadContext.put("mod", owner == null ? "" : owner.getName());
-                if (handler != null) {
-                    if (!event.isCancelable() || !event.isCanceled() || subInfo.receiveCanceled()) {
-                        if (filter == null || filter == ((IGenericEvent) event).getGenericType()) {
-                            handler.invoke(event);
+        if (ThreadManager.started){
+            if (ThreadManager.is_off_main_thread() && AirLightConfig.sectionMap.get("executor").getBoolean("force-forge-event-on-main-thread")) {
+                ThreadManager.postToMainThread(() -> {
+                    if (GETCONTEXT)
+                        ThreadContext.put("mod", owner == null ? "" : owner.getName());
+                    if (handler != null) {
+                        if (!event.isCancelable() || !event.isCanceled() || subInfo.receiveCanceled()) {
+                            if (filter == null || filter == ((IGenericEvent) event).getGenericType()) {
+                                handler.invoke(event);
+                            }
                         }
                     }
-                }
-                if (GETCONTEXT)
-                    ThreadContext.remove("mod");
+                    if (GETCONTEXT)
+                        ThreadContext.remove("mod");
 
-            });
-            return;
+                });
+                return;
+            }
         }
         synchronized (mutex) {
             if (GETCONTEXT)
