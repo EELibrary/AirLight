@@ -6,6 +6,8 @@ import com.google.common.collect.Iterables;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.skylight.executor.EntityMainTickThread;
+import org.skylight.executor.EntityMiscTickThread;
 
 public class TicksPerSecondCommand extends Command
 {
@@ -35,6 +37,8 @@ public class TicksPerSecondCommand extends Command
         }
 
         sender.sendMessage( ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "));
+        sender.sendMessage( ChatColor.GOLD + "Entity pool state: "+ ChatColor.GREEN + EntityMainTickThread.getPool().toString());
+        sender.sendMessage( ChatColor.GOLD + "Entity misc pool state: "+ ChatColor.GREEN + EntityMiscTickThread.getPool().toString());
         // Paper end
         sender.sendMessage(ChatColor.GOLD + "Memory Useage: " +ChatColor.GREEN+ ( ( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() ) / 1024 / 1024 ) + "MB/" + ( Runtime.getRuntime().maxMemory() / 1024 / 1024 ) + "MB");
         return true;

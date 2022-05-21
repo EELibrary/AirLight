@@ -27,6 +27,7 @@ public class EntityMainTickThread {
         List<Entity> list = new ArrayList<>(entities);
         pool.execute(new TickTask<Entity>(list, EntityMainTickThread::tickEntity,EPT));
     }
+
     public static void tickTiles(List<TileEntity> entities){
         int EPT = entities.size()/coreCount;
         if (EPT<2){
@@ -173,5 +174,9 @@ public class EntityMainTickThread {
                     chunk.removeTileEntity(tileentity.getPos());
             }
         }
+    }
+    public static ForkJoinPool getPool()
+    {
+        return pool;
     }
 }

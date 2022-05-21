@@ -106,9 +106,13 @@ public class EntityMiscTickThread {
         });
     }
 
-
     public static void onTickEnd(){
         phaser.arriveAndAwaitAdvance();
         phaser = null;
+    }
+
+    public static ForkJoinPool getPool()
+    {
+        return (ForkJoinPool) executor;
     }
 }
