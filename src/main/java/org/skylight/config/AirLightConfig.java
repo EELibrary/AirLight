@@ -25,6 +25,8 @@ public class AirLightConfig {
                 ConfigurationSection configurationSection = config.createSection("executor");
                 configurationSection.addDefault("entity-worker-core-size",Runtime.getRuntime().availableProcessors()*2);
                 configurationSection.addDefault("tracker-thread-count", Runtime.getRuntime().availableProcessors());
+                configurationSection.addDefault("force-bukkit-event-on-main-thread",false);
+                configurationSection.addDefault("force-forge-event-on-main-thread",false);
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.createSection("debug");
                 configurationSection1.addDefault("wait-tracker", true);

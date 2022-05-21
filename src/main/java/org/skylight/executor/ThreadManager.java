@@ -37,4 +37,8 @@ public class ThreadManager {
     public static void removeAsyncCatcherWhiteList(){
         thread_whitelist.remove(Thread.currentThread());
     }
+
+    public static void postToMainThread(Runnable runnable){
+        net.minecraft.server.MinecraftServer.getServerInst().processQueue.add(runnable);
+    }
 }

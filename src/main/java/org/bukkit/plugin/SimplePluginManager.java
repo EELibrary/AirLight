@@ -36,6 +36,8 @@ import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.util.FileUtil;
 
 import com.google.common.collect.ImmutableSet;
+import org.skylight.config.AirLightConfig;
+import org.skylight.executor.ThreadManager;
 
 /**
  * Handles all plugin management from the Server
@@ -474,6 +476,14 @@ public final class SimplePluginManager implements PluginManager {
      * @param event Event details
      */
     public void callEvent(Event event) {
+        if(ThreadManager.is_off_main_thread() && AirLightConfig.sectionMap.get("executor").getBoolean("force-bukkit-event-on-main-thread")) {
+            ThreadManager.postToMainThread(()->{
+                if (CatServer.getConfig().fakePlayerEventPass && event instanceof PlayerEvent && ((PlayerEvent) event).getPlayer() instanceof CraftFakePlayer)
+                    return; // CatServer
+                fireEvent(event);
+            });
+            return;
+        }
         if (CatServer.getConfig().fakePlayerEventPass && event instanceof PlayerEvent && ((PlayerEvent) event).getPlayer() instanceof CraftFakePlayer)
             return; // CatServer
         fireEvent(event);
