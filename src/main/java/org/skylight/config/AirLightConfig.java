@@ -3,7 +3,6 @@ package org.skylight.config;
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.skylight.executor.EntityMainTickThread;
 import org.skylight.executor.EntityMiscTickThread;
 
 import java.io.File;
@@ -26,7 +25,6 @@ public class AirLightConfig {
                 ConfigurationSection configurationSection = config.createSection("executor");
                 configurationSection.addDefault("entity-worker-core-size",Runtime.getRuntime().availableProcessors()*2);
                 configurationSection.addDefault("tracker-thread-count", Runtime.getRuntime().availableProcessors());
-                configurationSection.addDefault("entities-per-worker-thread", 50);
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.createSection("debug");
                 configurationSection1.addDefault("wait-tracker", true);
@@ -43,7 +41,6 @@ public class AirLightConfig {
                 sectionMap.put("debug", configurationSection1);
                 LogManager.getLogger().info("Finish loading!");
             }
-            EntityMainTickThread.THRESHOLD = sectionMap.get("executor").getInt("entities-per-worker-thread");
             EntityMiscTickThread.init(sectionMap.get("executor").getInt("entity-worker-core-size"));
         }catch (Exception e){
             e.printStackTrace();

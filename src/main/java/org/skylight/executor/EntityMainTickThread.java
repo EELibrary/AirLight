@@ -14,17 +14,27 @@ import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
 
 public class EntityMainTickThread {
+    private static final AtomicInteger threadId = new AtomicInteger(0);
     private static ForkJoinPool pool;
-    private static AtomicInteger active = new AtomicInteger(0);
+    private static final AtomicInteger active = new AtomicInteger(0);
+    private static int coreCount = Runtime.getRuntime().availableProcessors();
+
     public static void tickEntities(List<Entity> entities){
+        int EPT = entities.size()/coreCount;
+        if (EPT<2){
+            EPT = 2;
+        }
         List<Entity> list = new ArrayList<>(entities);
-        pool.execute(new TickTask<Entity>(list, EntityMainTickThread::tickEntity));
+        pool.execute(new TickTask<Entity>(list, EntityMainTickThread::tickEntity,EPT));
     }
     public static void tickTiles(List<TileEntity> entities){
+        int EPT = entities.size()/coreCount;
+        if (EPT<2){
+            EPT = 2;
+        }
         List<TileEntity> list = new ArrayList<>(entities);
-        pool.execute(new TickTask<TileEntity>(list, EntityMainTickThread::onTileTick));
+        pool.execute(new TickTask<TileEntity>(list, EntityMainTickThread::onTileTick,EPT));
     }
-    private static AtomicInteger threadId = new AtomicInteger(0);
 
     public static void await(){
         try{
@@ -45,24 +55,28 @@ public class EntityMainTickThread {
             return thread;
         };
         pool = new ForkJoinPool(threads,factory,null,true);
+        coreCount = threads;
     }
-    public static int THRESHOLD = 50;
-    public static class TickTask<E> extends RecursiveAction {
+
+    private static final class TickTask<E> extends RecursiveAction {
         private final List<E> list;
         private final int start;
         private final int end;
-        private Consumer<E> action;
+        private final Consumer<E> action;
+        private final int threshold;
 
-        public TickTask(List<E> list,Consumer<E> action) {
+        public TickTask(List<E> list,Consumer<E> action,int taskPerThread){
             this.action = action;
             this.list = list;
+            this.threshold = taskPerThread;
             this.start = 0;
             this.end = list.size();
         }
 
-        private TickTask(List<E> list,Consumer<E> action, int start, int end) {
+        private TickTask(List<E> list,Consumer<E> action, int start, int end,int taskPerThread) {
             this.action = action;
             this.list = list;
+            this.threshold = taskPerThread;
             this.start = start;
             this.end = end;
         }
@@ -72,13 +86,13 @@ public class EntityMainTickThread {
             active.incrementAndGet();
             ThreadManager.server_workers.add(Thread.currentThread());
             try{
-                if (end - start < THRESHOLD) {
+                if (end - start < this.threshold) {
                     for (int i = start; i < end; i++) {
                         this.action.accept(list.get(i));
                     }
                 } else {
                     int middle = (start + end) / 2;
-                    invokeAll(new TickTask<>(list,this.action,start,middle), new TickTask<>(list,this.action,middle,end));
+                    invokeAll(new TickTask<>(list,this.action,start,middle,this.threshold), new TickTask<>(list,this.action,middle,end,this.threshold));
                 }
             }catch (Exception e){
                 e.printStackTrace();
@@ -90,8 +104,7 @@ public class EntityMainTickThread {
 
     }
 
-
-    public static void tickEntity(Entity entity2) {
+    private static void tickEntity(Entity entity2) {
         World world = entity2.world;    // Get the world
         if (World.timeStopped.get()) {return;}
         if (!world.entityLimiter.shouldContinue()) {return;}
@@ -125,7 +138,7 @@ public class EntityMainTickThread {
         }
     }
 
-    public static void onTileTick(TileEntity tileentity) {
+    private static void onTileTick(TileEntity tileentity) {
         World world = tileentity.world;    // Get the world
         if(World.timeStopped.get()){return;}
         if (!world.tileLimiter.shouldContinue()) {return;}
