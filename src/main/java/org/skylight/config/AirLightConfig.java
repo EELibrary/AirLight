@@ -27,6 +27,10 @@ public class AirLightConfig {
                 configurationSection.addDefault("tracker-thread-count", Runtime.getRuntime().availableProcessors());
                 configurationSection.addDefault("force-bukkit-event-on-main-thread",false);
                 configurationSection.addDefault("force-forge-event-on-main-thread",false);
+                ConfigurationSection configurationSection2 = config.createSection("network");
+                configurationSection2.addDefault("pps-limit",2000);
+                configurationSection2.addDefault("enable-pps-limitor",true);
+                sectionMap.put("network",configurationSection2);
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.createSection("debug");
                 configurationSection1.addDefault("wait-tracker", true);
@@ -43,6 +47,8 @@ public class AirLightConfig {
                 sectionMap.put("debug", configurationSection1);
                 LogManager.getLogger().info("Finish loading!");
             }
+            net.minecraft.network.NetworkManager.ppsl = sectionMap.get("network").getInt("pps-limit");
+            net.minecraft.network.NetworkManager.enablePPSLimitor = sectionMap.get("network").getBoolean("enable-pps-limitor");
             EntityMiscTickThread.init(sectionMap.get("executor").getInt("entity-worker-core-size"));
         }catch (Exception e){
             e.printStackTrace();
