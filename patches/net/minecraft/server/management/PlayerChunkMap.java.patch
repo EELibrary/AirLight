@@ -37,8 +37,8 @@
 -    private final List<PlayerChunkMapEntry> entriesWithoutChunks = Lists.<PlayerChunkMapEntry>newLinkedList();
 -    private final List<PlayerChunkMapEntry> entries = Lists.<PlayerChunkMapEntry>newArrayList();
 +    private final Set<PlayerChunkMapEntry> dirtyEntries = new ConcurrentSkipListSet<>();
-+    private final List<PlayerChunkMapEntry> pendingSendToPlayers = new org.jmt.mcmt.paralelised.ConcurrentDoublyLinkedList();
-+    private final List<PlayerChunkMapEntry> entriesWithoutChunks = new org.jmt.mcmt.paralelised.ConcurrentDoublyLinkedList();
++    private final List<PlayerChunkMapEntry> pendingSendToPlayers = Collections.synchronizedList(new LinkedList<>());
++    private final List<PlayerChunkMapEntry> entriesWithoutChunks = Collections.synchronizedList(new LinkedList<>());
 +    private final List<PlayerChunkMapEntry> entries = new org.jmt.mcmt.paralelised.ConcurrentDoublyLinkedList();
      private int playerViewRadius;
      private long previousTotalWorldTime;
