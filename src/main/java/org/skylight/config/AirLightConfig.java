@@ -33,7 +33,7 @@ public class AirLightConfig {
                 sectionMap.put("network",configurationSection2);
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.createSection("debug");
-                configurationSection1.addDefault("wait-tracker", false);
+                configurationSection1.addDefault("wait-tracker", true);
                 sectionMap.put("debug", configurationSection1);
                 config.load(file);
                 config.save(file);
@@ -45,8 +45,6 @@ public class AirLightConfig {
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.getConfigurationSection("debug");
                 sectionMap.put("debug", configurationSection1);
-                ConfigurationSection configurationSection2 = config.getConfigurationSection("network");
-                sectionMap.put("network",configurationSection2);
                 LogManager.getLogger().info("Finish loading!");
             }
             net.minecraft.network.NetworkManager.ppsl = sectionMap.get("network").getInt("pps-limit");
