@@ -29,7 +29,7 @@ public class AirLightConfig {
                 configurationSection.addDefault("force-forge-event-on-main-thread",false);
                 ConfigurationSection configurationSection2 = config.createSection("network");
                 configurationSection2.addDefault("pps-limit",2000);
-                configurationSection2.addDefault("enable-pps-limitor",true);
+                configurationSection2.addDefault("enable-pps-limitor",false);
                 sectionMap.put("network",configurationSection2);
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.createSection("debug");
