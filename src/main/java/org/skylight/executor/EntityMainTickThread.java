@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
+import java.util.logging.LogManager;
 
 public class EntityMainTickThread {
     private static final AtomicInteger threadId = new AtomicInteger(0);
@@ -20,21 +21,13 @@ public class EntityMainTickThread {
     private static int coreCount = Runtime.getRuntime().availableProcessors();
 
     public static void tickEntities(List<Entity> entities){
-        int EPT = entities.size()/coreCount;
-        if (EPT<2){
-            EPT = 2;
-        }
         List<Entity> list = new ArrayList<>(entities);
-        pool.execute(new TickTask<Entity>(list, EntityMainTickThread::tickEntity,EPT));
+        pool.execute(new ParallelListTraverse<Entity>(list,coreCount,EntityMainTickThread::tickEntity));
     }
 
     public static void tickTiles(List<TileEntity> entities){
-        int EPT = entities.size()/coreCount;
-        if (EPT<2){
-            EPT = 2;
-        }
         List<TileEntity> list = new ArrayList<>(entities);
-        pool.execute(new TickTask<TileEntity>(list, EntityMainTickThread::onTileTick,EPT));
+        pool.execute(new ParallelListTraverse<TileEntity>(list,coreCount,EntityMainTickThread::onTileTick));
     }
 
     public static void await(){
@@ -59,14 +52,15 @@ public class EntityMainTickThread {
         coreCount = threads;
     }
 
-    private static final class TickTask<E> extends RecursiveAction {
+    public static class ParallelListTraverse<E> extends RecursiveAction {
+
         private final List<E> list;
         private final int start;
         private final int end;
         private final Consumer<E> action;
         private final int threshold;
 
-        public TickTask(List<E> list,Consumer<E> action,int taskPerThread){
+        public ParallelListTraverse(List<E> list, Consumer<E> action, int taskPerThread) {
             this.action = action;
             this.list = list;
             this.threshold = taskPerThread;
@@ -74,7 +68,7 @@ public class EntityMainTickThread {
             this.end = list.size();
         }
 
-        private TickTask(List<E> list,Consumer<E> action, int start, int end,int taskPerThread) {
+        private ParallelListTraverse(List<E> list, Consumer<E> action, int start, int end, int taskPerThread) {
             this.action = action;
             this.list = list;
             this.threshold = taskPerThread;
@@ -82,29 +76,43 @@ public class EntityMainTickThread {
             this.end = end;
         }
 
+        public ParallelListTraverse(List<E> list, int threads,Consumer<E> action) {
+            this.action = action;
+            this.list = list;
+            int taskPerThread = list.size() / threads;
+            if (taskPerThread < 2) {
+                taskPerThread = 2;
+            }
+            this.threshold = taskPerThread;
+            this.start = 0;
+            this.end = list.size();
+        }
+
         @Override
         protected void compute() {
             active.incrementAndGet();
             ThreadManager.server_workers.add(Thread.currentThread());
-            try{
+            try {
                 if (end - start < this.threshold) {
                     for (int i = start; i < end; i++) {
-                        this.action.accept(list.get(i));
+                        try {
+                            this.action.accept(list.get(i));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 } else {
                     int middle = (start + end) / 2;
-                    invokeAll(new TickTask<>(list,this.action,start,middle,this.threshold), new TickTask<>(list,this.action,middle,end,this.threshold));
+                    invokeAll(new ParallelListTraverse<>(list, this.action, start, middle, this.threshold), new ParallelListTraverse<>(list, this.action, middle, end, this.threshold));
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }finally {
                 ThreadManager.server_workers.remove(Thread.currentThread());
                 active.decrementAndGet();
             }
         }
-
     }
-
     private static void tickEntity(Entity entity2) {
         World world = entity2.world;    // Get the world
         if (World.timeStopped.get()) {return;}
