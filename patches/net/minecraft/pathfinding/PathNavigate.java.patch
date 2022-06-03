@@ -15,14 +15,30 @@
      private long timeoutTimer;
      private long lastTimeoutCheck;
      private double timeoutLimit;
-@@ -260,7 +260,9 @@
- 
-         for (int j1 = i - 1; j1 >= this.currentPath.getCurrentPathIndex(); --j1)
-         {
+@@ -257,16 +257,18 @@
+         int k = MathHelper.ceil(this.entity.width);
+         int l = MathHelper.ceil(this.entity.height);
+         int i1 = k;
+-
+-        for (int j1 = i - 1; j1 >= this.currentPath.getCurrentPathIndex(); --j1)
+-        {
 -            if (this.isDirectPathBetweenPoints(vec3d, this.currentPath.getVectorFromIndex(this.entity, j1), k, l, i1))
-+            Vec3d vec = this.currentPath.getVectorFromIndex(this.entity, j1);
-+            if (vec==null){continue;}
-+            if (this.isDirectPathBetweenPoints(vec3d,vec, k, l, i1))
-             {
-                 this.currentPath.setCurrentPathIndex(j1);
-                 break;
+-            {
+-                this.currentPath.setCurrentPathIndex(j1);
+-                break;
++        if (this.currentPath!=null) {
++            for (int j1 = i - 1; j1 >= this.currentPath.getCurrentPathIndex(); --j1) {
++                Vec3d vec = this.currentPath.getVectorFromIndex(this.entity, j1);
++                if (vec == null) {
++                    continue;
++                }
++                if (this.isDirectPathBetweenPoints(vec3d, vec, k, l, i1)) {
++                    this.currentPath.setCurrentPathIndex(j1);
++                    break;
++                }
+             }
+         }
+-
+         this.checkForStuck(vec3d);
+     }
+ 
