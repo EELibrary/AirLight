@@ -34,6 +34,7 @@ public class AirLightConfig {
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.createSection("debug");
                 configurationSection1.addDefault("wait-tracker", true);
+                configurationSection1.addDefault("wait-entity-worker", true);
                 sectionMap.put("debug", configurationSection1);
                 config.load(file);
                 config.save(file);
@@ -49,6 +50,7 @@ public class AirLightConfig {
                 sectionMap.put("network",configurationSection2);
                 LogManager.getLogger().info("Finish loading!");
             }
+            net.minecraft.world.World.waitEntitiesProcessor = sectionMap.get("debug").getBoolean("wait-entity-worker");
             net.minecraft.network.NetworkManager.ppsl = sectionMap.get("network").getInt("pps-limit");
             net.minecraft.network.NetworkManager.enablePPSLimitor = sectionMap.get("network").getBoolean("enable-pps-limitor");
             EntityMiscTickThread.init(sectionMap.get("executor").getInt("entity-worker-core-size"));
