@@ -45,6 +45,8 @@ public class AirLightConfig {
                 sectionMap.put("executor", configurationSection);
                 ConfigurationSection configurationSection1 = config.getConfigurationSection("debug");
                 sectionMap.put("debug", configurationSection1);
+                ConfigurationSection configurationSection2 = config.getConfigurationSection("network");
+                sectionMap.put("network",configurationSection2);
                 LogManager.getLogger().info("Finish loading!");
             }
             net.minecraft.network.NetworkManager.ppsl = sectionMap.get("network").getInt("pps-limit");
