@@ -309,7 +309,7 @@
                          s = "Maximum (" + s + ")";
                      }
  
-@@ -247,164 +220,171 @@
+@@ -247,164 +220,176 @@
                  }
              });
              entityIn.addEntityCrashInfo(crashreportcategory);
@@ -374,7 +374,6 @@
 -        {
 +    public void tick() {
 +        waitForLock();lock();
-+        List<EntityPlayerMP> list =  new CopyOnWriteArrayList<>();
 +        ParallelListTraverse<EntityTrackerEntry> task = new ParallelListTraverse<>(this.entries,threads,entitytrackerentry->{
              entitytrackerentry.updatePlayerList(this.world.playerEntities);
 -
@@ -387,7 +386,13 @@
 -                {
 -                    list.add((EntityPlayerMP)entity);
 +                if (entity instanceof EntityPlayerMP) {
-+                    list.add((EntityPlayerMP) entity);
++                    EntityPlayerMP entityplayermp = (EntityPlayerMP) entity;
++                    for (EntityTrackerEntry entitytrackerentry1 : this.entries) {
++                        if (entitytrackerentry1.getTrackedEntity() != entityplayermp) {
++                            entitytrackerentry1.updatePlayerEntity(entityplayermp);
++                        }
++                    }
++                    //list.add((EntityPlayerMP) entity);
                  }
              }
 +        });
@@ -406,18 +411,19 @@
 -                if (entitytrackerentry1.getTrackedEntity() != entityplayermp)
 -                {
 +        unlock();
-+        ParallelListTraverse<EntityPlayerMP> task2 = new ParallelListTraverse<>(list,threads,entityplayermp->{
++        /*ParallelListTraverse<EntityPlayerMP> task2 = new ParallelListTraverse<>(list,threads,entityplayermp->{
 +            for (EntityTrackerEntry entitytrackerentry1 : this.entries) {
 +                if (entitytrackerentry1.getTrackedEntity() != entityplayermp) {
                      entitytrackerentry1.updatePlayerEntity(entityplayermp);
                  }
              }
+-        }
 +        });
 +        if(wait) {
 +            forkJoinPool.submit(task2).join();
 +        }else {
 +            forkJoinPool.execute(task2);
-         }
++        }*/
      }
  
 -    public void updateVisibility(EntityPlayerMP player)
