@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/pathfinding/PathHeap.java
 +++ ../src-work/minecraft/net/minecraft/pathfinding/PathHeap.java
-@@ -1,151 +1,122 @@
+@@ -1,151 +1,131 @@
  package net.minecraft.pathfinding;
  
 -public class PathHeap
@@ -14,7 +14,7 @@
 -        if (point.index >= 0)
 -        {
 +public class PathHeap {
-+    private AtomicReferenceArray<PathPoint> pathPoints = new AtomicReferenceArray<>(128);
++    private AtomicReferenceArray<PathPoint> pathPoints = new AtomicReferenceArray<>(129);
 +    private volatile int count;
 +    public PathPoint addPoint(PathPoint point) {
 +        if (point.index.get() >= 0) {
@@ -25,17 +25,27 @@
 -            if (this.count == this.pathPoints.length)
 -            {
 +        } else {
-+            if (this.count == this.pathPoints.length()) {
++            if (this.count == this.pathPoints.length()-1) {
                  PathPoint[] apathpoint = new PathPoint[this.count << 1];
-                 System.arraycopy(this.pathPoints, 0, apathpoint, 0, this.count);
+-                System.arraycopy(this.pathPoints, 0, apathpoint, 0, this.count);
 -                this.pathPoints = apathpoint;
++                int length = this.pathPoints.length()-1;
++                PathPoint[] ps = new PathPoint[length];
++                for (int i=0;i<length;i++){
++                    ps[i] = this.pathPoints.get(i);
++                }
++                System.arraycopy(ps, 0, apathpoint, 0, this.count);
 +                for (int i = 0; i < apathpoint.length; i++) {
++                    if (apathpoint.length >= pathPoints.length()-1){
++                        continue;
++                    }
 +                    pathPoints.set(i, apathpoint[i]);
 +                }
              }
  
 -            this.pathPoints[this.count] = point;
 -            point.index = this.count;
++
 +            this.pathPoints.set(this.count, point);
 +            point.index.set(this.count);
              this.sortBack(this.count++);
