@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/pathfinding/PathFinder.java
 +++ ../src-work/minecraft/net/minecraft/pathfinding/PathFinder.java
-@@ -1,52 +1,49 @@
+@@ -1,52 +1,48 @@
  package net.minecraft.pathfinding;
  
  import com.google.common.collect.Sets;
@@ -28,7 +28,6 @@
 -    {
 -        this.nodeProcessor = processor;
 +    private final AtomicReference<NodeProcessor> nodeProcessor;
-+    private final Object mutex = new Object();
 +    public PathFinder(NodeProcessor processor) {
 +        this.nodeProcessor = new AtomicReference<>(processor);
      }
@@ -72,7 +71,7 @@
          pathFrom.totalPathDistance = 0.0F;
          pathFrom.distanceToNext = pathFrom.distanceManhattan(pathTo);
          pathFrom.distanceToTarget = pathFrom.distanceToNext;
-@@ -55,52 +52,48 @@
+@@ -55,52 +51,48 @@
          this.path.addPoint(pathFrom);
          PathPoint pathpoint = pathFrom;
          int i = 0;
@@ -141,7 +140,7 @@
                          pathpoint2.distanceToTarget = pathpoint2.totalPathDistance + pathpoint2.distanceToNext;
                          this.path.addPoint(pathpoint2);
                      }
-@@ -108,36 +101,26 @@
+@@ -108,36 +100,26 @@
              }
          }
  
